@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: node --test tests/unit/
+      - name: Service worker precache list is up to date
+        run: |
+          node tools/build-sw.mjs
+          git diff --exit-code -- sw.js || (echo "::error::sw.js is stale — run 'npm run build:sw' and commit it, otherwise phones will not see the new version" && exit 1)

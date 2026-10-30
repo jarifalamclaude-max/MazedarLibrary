@@ -1,0 +1,31 @@
+{
+  "name": "mazedar-library",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "মাজেদার লাইব্রেরি — offline-first personal library (PWA) with cloud sync and a book-cover scanner",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "node tools/build-vendor.mjs && node tools/build-sw.mjs",
+    "build:sw": "node tools/build-sw.mjs",
+    "test": "node --test tests/unit/",
+    "serve": "node tools/serve.mjs",
+    "e2e": "node --test --test-concurrency=1 tests/e2e/",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-mazedar"
+  },
+  "devDependencies": {
+    "@fontsource/galada": "5.3.0",
+    "@fontsource/hind-siliguri": "5.3.0",
+    "@fontsource/tiro-bangla": "5.3.0",
+    "@tesseract.js-data/ben": "1.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "esbuild": "0.28.2",
+    "fake-indexeddb": "6.2.5",
+    "firebase": "12.19.0",
+    "htm": "3.1.1",
+    "preact": "10.29.8",
+    "qrcode-generator": "2.0.4",
+    "tesseract.js": "7.0.0",
+    "tesseract.js-core": "7.0.0"
+  }
+}

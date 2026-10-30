@@ -1,0 +1,25 @@
+{
+  "name": "মাজেদার লাইব্রেরি",
+  "short_name": "মাজেদার লাইব্রেরি",
+  "description": "বইয়ের সংগ্রহ, খোঁজা আর ক্যামেরায় স্ক্যান — ইন্টারনেট ছাড়াও চলে।",
+  "lang": "bn",
+  "dir": "ltr",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff7f5",
+  "theme_color": "#e0588e",
+  "categories": ["books", "lifestyle", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "ক্যামেরায় বই খুঁজুন", "short_name": "স্ক্যান", "url": "./#/scan?mode=search", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "ক্যামেরায় বই যোগ করুন", "short_name": "যোগ করুন", "url": "./#/scan?mode=add", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
