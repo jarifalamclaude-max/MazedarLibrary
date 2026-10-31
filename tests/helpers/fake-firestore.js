@@ -319,6 +319,7 @@ export function createFakeFirestore({ scheduler = createScheduler(), rng = mulbe
   const hooks = {};
   const stats = {
     commits: [], txAttempts: 0, txConflicts: 0, txReads: 0, listens: 0, snapshots: 0, docsDelivered: 0, rejected: 0,
+    deliveredTo: {}, // client name -> documents delivered to its listeners
   };
 
   const nextServerTime = () => {
@@ -540,8 +541,10 @@ export function createFakeFirestore({ scheduler = createScheduler(), rng = mulbe
     listener.fromCache = fromCache;
     listener.hasPendingWrites = hasPendingWrites;
     listener.delivered = true;
+    const n = changes.filter((ch) => ch.type !== 'removed').length;
     stats.snapshots += 1;
-    stats.docsDelivered += changes.filter((ch) => ch.type !== 'removed').length;
+    stats.docsDelivered += n;
+    stats.deliveredTo[c.name] = (stats.deliveredTo[c.name] || 0) + n;
     listener.onNext(querySnapshot(listener, view, changes, { fromCache, hasPendingWrites }));
   }
 
@@ -794,6 +797,10 @@ export function createFakeFirestore({ scheduler = createScheduler(), rng = mulbe
     },
     setRules(fn) {
       currentRules = fn;
+    },
+    /** Re-check every active listener against the current rules (Firestore does this after a rules change). */
+    revalidate() {
+      for (const c of clients) if (c.online) for (const l of c.listeners) scheduleDelivery(l);
     },
     /** Write anything straight into the server (like the console/Admin SDK: no rules, no validation). */
     rawSet(path, data) {

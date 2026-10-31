@@ -29,7 +29,7 @@ npm install          # dev tooling only (vendor/ output is committed)
 npm run build        # rebuild vendor bundles + sw.js precache list
 npm test             # unit tests (node:test)
 npm run e2e          # browser tests (Playwright/Chromium)
-bash tests/integration/run.sh   # two-device sync against the Firebase emulators
+npm run e2e:sync     # two phones syncing through the Firebase emulators (needs Java)
 node tools/serve.mjs 8080       # serve locally
 ```
 Architecture and module contracts: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·

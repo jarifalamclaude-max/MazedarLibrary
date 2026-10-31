@@ -136,5 +136,5 @@ key-টি আপনার ব্যক্তিগত লাইব্রের�
 
 ## ডেভেলপারদের জন্য
 - কোনো build ছাড়াই চলে (static files)। কোড বদলালে `npm run build` (sw.js-এর তালিকা হালনাগাদ) চালিয়ে commit করুন — না হলে ফোনগুলো নতুন সংস্করণের খবর পাবে না।
-- টেস্ট: `npm test` (ইউনিট), `npm run e2e` (ব্রাউজার), `bash tests/integration/run.sh` (Firebase emulator দিয়ে দুই-ডিভাইস সিঙ্ক)।
+- টেস্ট: `npm test` (ইউনিট), `npm run e2e` (ব্রাউজার), `npm run e2e:sync` (Firebase emulator দিয়ে দুই ফোনের সিঙ্ক — Java লাগে)।
 - স্থাপত্য ও মডিউলের নিয়ম: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md)। তথ্যের উৎস ও সিদ্ধান্ত: [`docs/DATA-NOTES.md`](DATA-NOTES.md)।

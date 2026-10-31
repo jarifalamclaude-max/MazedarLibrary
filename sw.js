@@ -6,7 +6,7 @@
 //   (only the engine variant the phone needs is downloaded) and survive updates.
 // - config.js is network-first so a newly pasted Firebase config is picked up.
 // - Cross-origin requests (Firebase, Gemini) are never intercepted.
-const VERSION = '048d6ac295d2';
+const VERSION = '3483d5d28029';
 const PRECACHE = [
   "assets/fonts/fonts.css",
   "assets/fonts/galada-bengali-400-normal.woff2",
@@ -36,6 +36,7 @@ const PRECACHE = [
   "src/lib/clock.js",
   "src/lib/cloud.js",
   "src/lib/gemini.js",
+  "src/lib/matcher.js",
   "src/lib/merge.js",
   "src/lib/ocr.js",
   "src/lib/replica.js",

@@ -8,10 +8,10 @@
   "scripts": {
     "build": "node tools/build-vendor.mjs && node tools/build-sw.mjs",
     "build:sw": "node tools/build-sw.mjs",
-    "test": "node --test tests/unit/",
+    "test": "node --test \"tests/unit/*.test.js\"",
     "serve": "node tools/serve.mjs",
-    "e2e": "node --test --test-concurrency=1 tests/e2e/",
-    "emulators": "firebase emulators:start --only auth,firestore --project demo-mazedar"
+    "e2e": "node --test --test-concurrency=1 \"tests/e2e/*.test.js\"",
+    "e2e:sync": "bash tests/e2e/run-sync.sh"
   },
   "devDependencies": {
     "@fontsource/galada": "5.3.0",

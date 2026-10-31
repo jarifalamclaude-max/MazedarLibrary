@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// মাজেদার লাইব্রেরি — Firestore security rules.
+// Paste this whole file into Firebase console → Firestore Database → Rules → Publish.
+//
+// Each account can read and write only its own library at libraries/{uid}/...
+// Writes must carry the server's timestamp (the sync engine relies on it to
+// pull changes in order) and documents are never deleted: deleting a book in
+// the app only marks it as deleted, so nothing can be lost from the cloud copy.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /libraries/{uid}/{coll}/{docId} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && coll in ['records', 'covers']
+        && request.resource.data.id == docId
+        && request.resource.data._v is map
+        && request.resource.data._srv == request.time;
+      allow delete: if false;
+    }
+  }
+}

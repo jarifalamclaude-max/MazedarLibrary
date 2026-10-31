@@ -160,13 +160,9 @@ test('opens with no network after the first visit (service worker)', async () =>
   const { context, page, errors } = await phone(env.browser);
   await page.goto(`${env.base}?sw=1#/`);
   await page.waitForSelector('#app .page');
-  await page.waitForFunction(async () => {
-    const reg = await navigator.serviceWorker.getRegistration();
-    return !!reg?.active && !!navigator.serviceWorker.controller;
-  }, null, { timeout: 30000 }).catch(async () => {
-    await page.reload();
-    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 30000 });
-  });
+  // installed (shell precached) and activated; activation claims this page
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 30000 });
   await context.setOffline(true);
   await page.reload();
   await page.waitForSelector('#app .hero', { timeout: 20000 });

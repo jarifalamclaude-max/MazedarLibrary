@@ -16,7 +16,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Unit tests
-        run: node --test tests/unit/
+        run: npm test
       - name: Service worker precache list is up to date
         run: |
           node tools/build-sw.mjs
