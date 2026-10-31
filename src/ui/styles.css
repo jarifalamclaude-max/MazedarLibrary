@@ -154,9 +154,11 @@ img { max-width: 100%; }
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: 10px;
   margin: 0 -16px; padding: calc(10px + var(--safe-t)) 16px 10px;
+  background: var(--bg); /* older iOS without color-mix() */
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: saturate(1.4) blur(14px);
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--line);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
 }
 .topbar h1, .topbar .title { margin: 0; font-size: 19px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -314,7 +316,7 @@ img { max-width: 100%; }
 .toolbar .filter svg { width: 18px; height: 18px; color: var(--ink-3); }
 .select {
   appearance: none; -webkit-appearance: none; border: 1.5px solid var(--line-2); background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23b06a8c' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
-  border-radius: 14px; padding: 9px 32px 9px 12px; font-size: 14.5px; max-width: 100%;
+  border-radius: 14px; padding: 9px 32px 9px 12px; font-size: 16px; max-width: 100%; /* <16px makes iOS zoom in on tap */
 }
 
 /* ---------- buttons ---------- */
@@ -348,7 +350,8 @@ img { max-width: 100%; }
 /* ---------- bottom nav ---------- */
 .nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; height: calc(var(--nav-h) + var(--safe-b)); padding-bottom: var(--safe-b);
-  display: flex; justify-content: center; background: color-mix(in srgb, var(--surface) 88%, transparent);
+  display: flex; justify-content: center; background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--line);
 }
 .nav-inner { width: 100%; max-width: 760px; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; }
@@ -531,3 +534,8 @@ img { max-width: 100%; }
 /* one clear button in search boxes (ours), not the browser's as well */
 input[type='search']::-webkit-search-cancel-button,
 input[type='search']::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+
+/* install hint (iPhone: Add to Home Screen; Android: install button) */
+.install-hint { margin-bottom: 14px; align-items: center; }
+.install-hint .icon-btn { width: 36px; height: 36px; margin: -4px -6px -4px 0; }
+.share-glyph { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line-2); font-size: 13px; vertical-align: -3px; }

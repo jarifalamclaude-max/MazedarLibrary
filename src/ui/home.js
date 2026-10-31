@@ -4,6 +4,7 @@ import {
 } from './core.js';
 import { searchLibrary, byName, byTitle, addAuthor, HUMAYUN_AUTHOR_ID } from './data.js';
 import { SyncPill } from './sync-pill.js';
+import { InstallHint } from './install.js';
 
 export function BookRow({ book, lib, showAuthor = false, showSerial = false }) {
   const author = showAuthor ? lib.authorById.get(book.authorId) : null;
@@ -165,6 +166,7 @@ export function HomePage({ lib, cloudState }) {
     </div>
 
     ${results ? html`<${SearchResults} lib=${lib} results=${results} q=${dq} />` : html`<div>
+      <${InstallHint} />
       ${lib.dupes.length > 0 && html`<a href="#/dupes" style="text-decoration:none;color:inherit;display:block;margin-bottom:12px">
         <div class="notice warn"><${Icon} name="alert" /><div><b>${bn(lib.dupes.length)}টি বই দুবার আছে বলে মনে হচ্ছে।</b> দেখে নিতে এখানে চাপুন।</div></div></a>`}
 

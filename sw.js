@@ -6,7 +6,7 @@
 //   (only the engine variant the phone needs is downloaded) and survive updates.
 // - config.js is served from cache and refreshed in the background (new config: next start).
 // - Cross-origin requests (Firebase, Gemini) are never intercepted.
-const VERSION = '2412d6a34987';
+const VERSION = '6c898b5c7273';
 const PRECACHE = [
   "assets/fonts/fonts.css",
   "assets/fonts/galada-bengali-400-normal.woff2",
@@ -48,6 +48,7 @@ const PRECACHE = [
   "src/ui/core.js",
   "src/ui/data.js",
   "src/ui/home.js",
+  "src/ui/install.js",
   "src/ui/lily-svg.js",
   "src/ui/scan.js",
   "src/ui/settings.js",
