@@ -4,6 +4,51 @@
 const BASE = new URL('../../vendor/tesseract/', import.meta.url).href;
 const IDLE_MS = 3 * 60 * 1000;
 const READY_KEY = 'mazedar:ocrReady';
+const RUNTIME_CACHE = 'mazedar-runtime-v1'; // same cache the service worker serves vendor/ files from
+const INIT_TIMEOUT_MS = 180000; // first start downloads ~5-8 MB; slow mobile data is fine, a stall is not
+const JOB_TIMEOUT_MS = 90000;
+
+function withTimeout(promise, ms, message) {
+  let t;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { t = setTimeout(() => reject(new Error(message)), ms); }),
+  ]).finally(() => clearTimeout(t));
+}
+
+// Same feature tests tesseract.js uses to pick its engine file (wasm-feature-detect).
+const SIMD = [0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11];
+const RELAXED_SIMD = [0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 15, 1, 13, 0, 65, 1, 253, 15, 65, 2, 253, 15, 253, 128, 2, 11];
+
+function coreFileUrl() {
+  const ok = (bytes) => {
+    try { return WebAssembly.validate(new Uint8Array(bytes)); } catch { return false; }
+  };
+  const name = ok(RELAXED_SIMD) ? 'tesseract-core-relaxedsimd-lstm.wasm.js' : ok(SIMD) ? 'tesseract-core-simd-lstm.wasm.js' : 'tesseract-core-lstm.wasm.js';
+  return `${BASE}core/${name}`;
+}
+
+/** Put the engine files this phone needs into the offline cache (if the browser has one). */
+async function cacheEngineFiles() {
+  if (typeof caches === 'undefined') return true;
+  const urls = [`${BASE}worker.min.js`, coreFileUrl(), `${BASE}lang/ben.traineddata.gz`, `${BASE}lang/eng.traineddata.gz`];
+  const cache = await caches.open(RUNTIME_CACHE);
+  for (const u of urls) {
+    if (!(await cache.match(u)) && !(await caches.match(u))) await cache.add(u);
+  }
+  return true;
+}
+
+/** True when the engine and language files are really stored for offline use. */
+export async function checkOfflineReady() {
+  if (typeof caches === 'undefined') return isOfflineReady();
+  try {
+    for (const u of [coreFileUrl(), `${BASE}worker.min.js`]) if (!(await caches.match(u))) return false;
+    return isOfflineReady();
+  } catch {
+    return false;
+  }
+}
 
 let workerPromise = null;
 let idleTimer = null;
@@ -19,26 +64,35 @@ function touchIdle() {
   }, IDLE_MS);
 }
 
+function resetWorker(worker) {
+  workerPromise = null;
+  try { worker?.terminate(); } catch { /* already gone */ }
+}
+
 async function getWorker() {
   if (!workerPromise) {
-    workerPromise = (async () => {
+    let built = null;
+    workerPromise = withTimeout((async () => {
       const mod = await import('../../vendor/tesseract/tesseract.esm.min.js');
       const Tesseract = mod.default || mod;
-      const worker = await Tesseract.createWorker(['ben', 'eng'], Tesseract.OEM?.LSTM_ONLY ?? 1, {
-        workerPath: `${BASE}worker.min.js`,
-        corePath: `${BASE}core`,
-        langPath: `${BASE}lang`,
-        gzip: true,
-        workerBlobURL: false,
-        cacheMethod: 'write',
-        logger: (m) => progressSink?.(m),
-        errorHandler: () => { workerPromise = null; },
+      // tesseract.js only rejects createWorker when its first step fails; a failed
+      // language load is reported through errorHandler, so turn that into a rejection.
+      const worker = await new Promise((resolve, reject) => {
+        Tesseract.createWorker(['ben', 'eng'], Tesseract.OEM?.LSTM_ONLY ?? 1, {
+          workerPath: `${BASE}worker.min.js`,
+          corePath: `${BASE}core`,
+          langPath: `${BASE}lang`,
+          gzip: true,
+          workerBlobURL: false,
+          cacheMethod: 'write',
+          logger: (m) => progressSink?.(m),
+          errorHandler: (e) => reject(new Error(typeof e === 'string' ? e : e?.message || 'OCR engine error')),
+        }).then((w) => { built = w; resolve(w); }, reject);
       });
       await worker.setParameters({ preserve_interword_spaces: '1', tessedit_pageseg_mode: '3' });
-      try { localStorage.setItem(READY_KEY, '1'); } catch { /* ignore */ }
       return worker;
-    })();
-    workerPromise.catch(() => { workerPromise = null; });
+    })(), INIT_TIMEOUT_MS, 'অফলাইন স্ক্যানার চালু হতে পারেনি (ইন্টারনেট সংযোগ দেখুন)');
+    workerPromise.catch(() => resetWorker(built));
   }
   touchIdle();
   return workerPromise;
@@ -49,6 +103,8 @@ export async function warmupOffline({ onProgress } = {}) {
   progressSink = onProgress || null;
   try {
     await getWorker();
+    await cacheEngineFiles();
+    try { localStorage.setItem(READY_KEY, '1'); } catch { /* ignore */ }
   } finally {
     progressSink = null;
   }
@@ -209,7 +265,8 @@ export function ocrOffline(canvas, { onProgress, signal } = {}) {
       for (const v of variants) {
         if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
         onProgress?.(`ফোনেই নাম পড়া হচ্ছে… (${results.length + 1}/${variants.length})`);
-        const { data } = await worker.recognize(v.canvas, {}, { text: true, tsv: true });
+        const { data } = await withTimeout(worker.recognize(v.canvas, {}, { text: true, tsv: true }), JOB_TIMEOUT_MS, 'পড়তে অনেক সময় লাগছে — আবার চেষ্টা করুন')
+          .catch((e) => { resetWorker(worker); throw e; });
         const lines = parseTsv(data.tsv);
         const score = lines.reduce((s, l) => s + l.confidence * Math.min(l.text.length, 30), 0);
         results.push({ name: v.name, lines, score });

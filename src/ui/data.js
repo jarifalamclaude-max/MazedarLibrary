@@ -1,7 +1,7 @@
 // Derived views of the library (pure, recomputed when the store changes) and
 // the user actions that edit it. Nothing is ever hard-deleted: delete = trash,
 // "delete forever" = hidden tombstone, so no device can resurrect or lose data.
-import { sortKey, searchKey, searchScore, similarity, SEARCH_THRESHOLD } from '../lib/bangla.js';
+import { sortKey, searchKey, searchScore, similarity, toAsciiDigits, SEARCH_THRESHOLD } from '../lib/bangla.js';
 import { LEVELS } from '../lib/matcher.js';
 import { newId } from '../lib/store.js';
 import { HUMAYUN_AUTHOR_ID, HUMAYUN_GROUPS, categoryForCatalogEntry } from '../data/humayun.js';
@@ -51,21 +51,29 @@ export function derive(records) {
   const catalog = [];
   const trash = [];
   let settings = { ...DEFAULT_SETTINGS };
+  const looseBooks = [];
+  const looseCatalog = [];
   for (const r of records.values()) {
     if (r.kind === 'settings') {
       settings = { ...DEFAULT_SETTINGS, ...r };
       continue;
     }
+    if (r.purged) continue; // deleted forever: hidden everywhere, kept only as a tombstone
     if (r.deleted) {
-      if (!r.purged && (r.kind === 'book' || r.kind === 'author' || r.kind === 'catalog')) trash.push(r);
+      if (r.kind === 'book' || r.kind === 'author' || r.kind === 'catalog') trash.push(r);
       continue;
     }
     if (r.kind === 'author') authors.push(r);
-    else if (r.kind === 'book') books.push(r);
-    else if (r.kind === 'catalog') catalog.push(r);
+    else if (r.kind === 'book') looseBooks.push(r);
+    else if (r.kind === 'catalog') looseCatalog.push(r);
   }
 
   const authorById = new Map(authors.map((a) => [a.id, a]));
+  // A book or list entry whose folder was deleted (e.g. on the other phone while
+  // this one added to it offline) belongs with its folder in the trash.
+  const folderDeleted = (r) => records.get(r.authorId)?.deleted === true;
+  for (const r of looseBooks) (folderDeleted(r) ? trash : books).push(r);
+  for (const r of looseCatalog) (folderDeleted(r) ? trash : catalog).push(r);
   const booksByAuthor = new Map();
   for (const b of books) {
     if (!booksByAuthor.has(b.authorId)) booksByAuthor.set(b.authorId, []);
@@ -141,6 +149,17 @@ export function derive(records) {
   };
 }
 
+/** ISBNs compared as plain digits (Bengali digits and hyphens allowed in either). */
+export function isbnDigits(s) {
+  return toAsciiDigits(String(s || '')).replace(/[^0-9xX]/g, '').toUpperCase();
+}
+
+function isbnMatches(isbn, q) {
+  const a = isbnDigits(isbn);
+  const b = isbnDigits(q);
+  return !!a && b.length >= 6 && a.includes(b);
+}
+
 /** Global search across books, authors and not-yet-owned ideal-list entries. */
 export function searchLibrary(lib, query) {
   const q = (query || '').trim();
@@ -155,7 +174,7 @@ export function searchLibrary(lib, query) {
       b.category ? searchScore(q, b.category) * 0.7 : 0,
       b.publisher ? searchScore(q, b.publisher) * 0.7 : 0,
       b.notes ? searchScore(q, b.notes) * 0.6 : 0,
-      b.isbn && q.replace(/[^0-9xX]/g, '').length >= 6 && b.isbn.replace(/[^0-9xX]/g, '').includes(q.replace(/[^0-9xX]/g, '')) ? 1 : 0,
+      isbnMatches(b.isbn, q) ? 1 : 0,
     );
     if (s >= SEARCH_THRESHOLD) books.push({ book: b, author, score: s });
   }
@@ -213,6 +232,22 @@ export function findAuthorByName(lib, name) {
 // ---------------------------------------------------------------- actions
 const put = (changes) => ctx.store.put('records', changes);
 
+function hash36(s) {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x01000193;
+  for (const ch of s) {
+    const c = ch.codePointAt(0);
+    h1 = Math.imul(h1 ^ c, 16777619);
+    h2 = Math.imul(h2 ^ c, 2246822519);
+  }
+  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
+}
+
+/** Same name → same id on every phone, so a folder created on both phones offline merges into one. */
+export function authorIdFor(name) {
+  return `a_${hash36(searchKey(name))}`;
+}
+
 export async function addAuthor(lib, name) {
   const clean = (name || '').normalize('NFC').trim().replace(/\s+/g, ' ');
   if (!clean) throw new Error('লেখকের নাম লিখুন');
@@ -223,7 +258,10 @@ export async function addAuthor(lib, name) {
     await restoreRecord(lib, trashed);
     return trashed;
   }
-  return put({ id: newId('a'), kind: 'author', name: clean, note: '', deleted: false, createdAt: Date.now() });
+  let id = authorIdFor(clean);
+  const prior = lib.records.get(id);
+  if (prior && !prior.deleted && !prior.purged) id = newId('a'); // that id belongs to a since-renamed folder
+  return put({ id, kind: 'author', name: clean, note: '', deleted: false, purged: false, deletedWith: null, createdAt: Date.now() });
 }
 
 export async function addBook(fields) {
@@ -273,16 +311,19 @@ export async function trashRecord(lib, rec) {
 }
 
 export async function restoreRecord(lib, rec) {
-  const items = [{ id: rec.id, deleted: false, deletedAt: null, purged: false, deletedWith: null }];
-  if (rec.kind === 'author') {
+  const items = new Map();
+  const add = (r) => items.set(r.id, { id: r.id, deleted: false, deletedAt: null, purged: false, deletedWith: null });
+  add(rec);
+  // Restoring anything from a deleted folder brings the whole folder back
+  // (except what was deleted forever), so its counter and list come back too.
+  const author = rec.kind === 'author' ? rec : rec.authorId ? lib.records.get(rec.authorId) : null;
+  if (author && (author.deleted || rec === author)) {
+    add(author);
     for (const r of lib.records.values()) {
-      if (r.deleted && r.deletedWith === rec.id) items.push({ id: r.id, deleted: false, deletedAt: null, purged: false, deletedWith: null });
+      if (r.deleted && !r.purged && r.deletedWith === author.id) add(r);
     }
-  } else if (rec.authorId) {
-    const author = lib.records.get(rec.authorId);
-    if (author?.deleted) items.push({ id: author.id, deleted: false, deletedAt: null, purged: false });
   }
-  await ctx.store.putMany('records', items);
+  await ctx.store.putMany('records', [...items.values()]);
 }
 
 export function purgeRecord(rec) {

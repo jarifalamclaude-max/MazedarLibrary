@@ -7,7 +7,7 @@ import {
 } from './data.js';
 import { readConfig, saveConfig, clearConfig, parseConfigText, makeSetupLink, decodeSetupParam, authErrorText } from '../lib/cloud.js';
 import { testKey, listModels } from '../lib/gemini.js';
-import { warmupOffline } from '../lib/ocr.js';
+import { warmupOffline, checkOfflineReady } from '../lib/ocr.js';
 import qrcode from '../../vendor/qrcode.js';
 
 const GUIDE_URL = 'https://github.com/jarifalamclaude-max/MazedarLibrary/blob/main/docs/SETUP.md';
@@ -212,15 +212,16 @@ function GeminiSection({ settings, focus }) {
 }
 
 function OfflineScannerSection() {
-  const [ready, setReady] = useState(() => localStorage.getItem('mazedar:ocrReady') === '1');
+  const [ready, setReady] = useState(false);
   const [prog, setProg] = useState(null);
+  useEffect(() => { checkOfflineReady().then(setReady); }, []);
   const run = async () => {
     setProg('শুরু হচ্ছে…');
     try {
       await warmupOffline({ onProgress: (p) => setProg(typeof p === 'string' ? p : p?.status ? `${p.status} ${p.progress ? bn(Math.round(p.progress * 100)) + '%' : ''}` : '…') });
-      localStorage.setItem('mazedar:ocrReady', '1');
-      setReady(true);
-      toast('অফলাইন স্ক্যানার প্রস্তুত ✓', { type: 'ok' });
+      const ok = await checkOfflineReady();
+      setReady(ok);
+      toast(ok ? 'অফলাইন স্ক্যানার প্রস্তুত ✓' : 'স্ক্যানার চলছে, তবে অফলাইনের জন্য পুরোপুরি জমা হয়নি — অ্যাপটি একবার বন্ধ করে খুলে আবার চেষ্টা করুন', { type: ok ? 'ok' : '' });
     } catch (e) {
       toast(`ডাউনলোড হয়নি: ${e?.message || e}`, { type: 'err' });
     } finally {
@@ -423,7 +424,11 @@ export function DupesPage({ lib }) {
           <button class="btn primary sm" onClick=${async () => {
             const keep = (a.serial ?? 1e9) <= (b.serial ?? 1e9) ? a : b;
             const drop = keep === a ? b : a;
-            await updateRecord(keep.id, { copies: (Number(keep.copies) || 1) + (Number(drop.copies) || 1), notes: [keep.notes, drop.notes].filter(Boolean).join('\n') });
+            await updateRecord(keep.id, {
+              copies: (Number(keep.copies) || 1) + (Number(drop.copies) || 1),
+              notes: [keep.notes, drop.notes].filter(Boolean).join('\n'),
+              catalogId: keep.catalogId || drop.catalogId || null, // keep the list link so the countdown stays right
+            });
             await trashRecord(lib, drop);
             toast(`এক করা হলো — “${keep.title}” এখন ${bn((Number(keep.copies) || 1) + (Number(drop.copies) || 1))} কপি`, { type: 'ok' });
           }}>এক করুন (কপি যোগ)</button>

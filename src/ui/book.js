@@ -4,8 +4,9 @@ import {
 } from './core.js';
 import {
   useLib, getLib, byName, addAuthor, addBook, updateRecord, trashRecord, restoreRecord, addCatalogEntry, findSimilarBooks, suggestCatalog,
-  groupById, HUMAYUN_AUTHOR_ID, categoryForCatalogEntry,
+  groupById, HUMAYUN_AUTHOR_ID, categoryForCatalogEntry, isbnDigits,
 } from './data.js';
+import { canonical } from '../lib/merge.js';
 import { similarity } from '../lib/bangla.js';
 import { LEVELS } from '../lib/matcher.js';
 import { imageFileToCanvas, canvasToJpegDataUrl } from '../lib/camera.js';
@@ -15,6 +16,20 @@ const CATEGORY_SUGGESTIONS = ['উপন্যাস', 'গল্পগ্রন
 
 function cleanText(s) {
   return String(s || '').normalize('NFC').trim().replace(/\s+/g, ' ');
+}
+
+/** The editable fields of the form, normalised the way they are saved (for change detection). */
+function formFields(f) {
+  return {
+    title: cleanText(f.title),
+    category: cleanText(f.category),
+    publisher: cleanText(f.publisher),
+    isbn: isbnDigits(f.isbn),
+    copies: Math.max(1, Math.min(99, Number(f.copies) || 1)),
+    notes: String(f.notes || '').trim(),
+    favorite: !!f.favorite,
+    readStatus: f.readStatus || '',
+  };
 }
 
 /** Ask what to do when the book already exists. Resolves 'copy' | 'separate' | null. */
@@ -43,7 +58,7 @@ function BookEditor({ init, close }) {
   const editing = init.book || null;
   const [f, setF] = useState(() => ({
     title: editing?.title ?? init.title ?? '',
-    authorId: editing?.authorId ?? init.authorId ?? (init.authorName ? '__new' : ''),
+    authorId: editing?.authorId ?? (init.authorId || (init.authorName ? '__new' : '')),
     newAuthor: init.authorName || '',
     category: editing?.category ?? init.category ?? '',
     publisher: editing?.publisher ?? '',
@@ -58,6 +73,7 @@ function BookEditor({ init, close }) {
     pickList: false,
   }));
   const [busy, setBusy] = useState(false);
+  const initialForm = useRef(f); // what the sheet showed when it opened
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
 
   const authors = useMemo(() => [...lib.authors].sort(byName), [lib]);
@@ -95,7 +111,7 @@ function BookEditor({ init, close }) {
       const authorName = lib.authorById.get(aid)?.name || cleanText(f.newAuthor);
 
       if (!editing) {
-        const dup = findSimilarBooks(getFreshLib(), { authorId: aid, title, catalogId: f.catalogId }).find((d) => d.score >= 0.93 || d.book.catalogId === f.catalogId);
+        const dup = findSimilarBooks(getFreshLib(), { authorId: aid, title, catalogId: f.catalogId }).find((d) => d.score >= 0.93 || (f.catalogId && d.book.catalogId === f.catalogId));
         if (dup) {
           const choice = await askDuplicate(dup.book, authorName);
           if (!choice) return;
@@ -111,7 +127,13 @@ function BookEditor({ init, close }) {
 
       let catalogId = f.catalogId;
       const authorEntries = getFreshLib().catalogByAuthor.get(aid) || [];
-      if (!catalogId && !editing && f.addToList && authorEntries.length) {
+      if (!catalogId && !editing && authorEntries.length) {
+        // The exact title is already on the list (perhaps owned: a second copy or edition): link, never duplicate.
+        const same = suggestCatalog(getFreshLib(), aid, title, { includeOwned: true });
+        if (same?.level === 'exact') catalogId = same.entry.id;
+      }
+      // A new list entry only when the user saw the tick-box (not while a "এটি কি…?" question is shown).
+      if (!catalogId && !editing && f.addToList && !suggestion && authorEntries.length) {
         const created = await addCatalogEntry({ authorId: aid, title, group: aid === HUMAYUN_AUTHOR_ID ? 'g13' : '' });
         catalogId = created.id;
       }
@@ -121,7 +143,7 @@ function BookEditor({ init, close }) {
         authorId: aid,
         category: cleanText(f.category) || (!editing && entry ? categoryForCatalogEntry(entry) : ''),
         publisher: cleanText(f.publisher),
-        isbn: cleanText(f.isbn),
+        isbn: isbnDigits(f.isbn),
         copies: Math.max(1, Math.min(99, Number(f.copies) || 1)),
         notes: String(f.notes || '').trim(),
         favorite: !!f.favorite,
@@ -130,7 +152,15 @@ function BookEditor({ init, close }) {
       };
       let book;
       if (editing) {
-        book = await updateRecord(editing.id, fields);
+        // Send only what was changed in this sheet, so a field edited meanwhile on
+        // the other phone (or tab) is not overwritten with the value shown at opening.
+        const before = formFields(initialForm.current);
+        const now = formFields(f);
+        const changed = {};
+        for (const k of Object.keys(now)) if (canonical(now[k]) !== canonical(before[k])) changed[k] = fields[k];
+        if (aid !== editing.authorId) changed.authorId = aid;
+        if ((catalogId || null) !== (editing.catalogId || null)) changed.catalogId = catalogId || null;
+        book = Object.keys(changed).length ? await updateRecord(editing.id, changed) : editing;
       } else {
         book = await addBook({ ...fields, addedVia: init.addedVia || 'manual' });
         if (init.coverDataUrl && f.keepCover) await ctx.store.setCover(book.id, init.coverDataUrl);
@@ -265,7 +295,7 @@ function CoverActions({ book }) {
     }
   };
   return html`<div class="row wrap" style="gap:8px">
-    <input ref=${input} type="file" accept="image/*" capture="environment" class="sr-only" onChange=${pick} />
+    <input ref=${input} type="file" accept="image/*" class="sr-only" onChange=${pick} />
     <button class="btn soft sm" onClick=${() => input.current.click()}><${Icon} name="camera" /> ${book.hasCover ? 'ছবি বদলান' : 'কভারের ছবি'}</button>
     ${book.hasCover && html`<button class="btn ghost sm" onClick=${async () => { await ctx.store.setCover(book.id, null); toast('ছবি সরানো হলো'); }}>ছবি সরান</button>`}
   </div>`;

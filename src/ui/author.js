@@ -6,6 +6,7 @@ import {
   byTitle, groupById, GROUPS, LATER_GROUP, trashRecord, updateRecord, acquireEntry, addCatalogEntry, findAuthorByName, sortKeyOf,
 } from './data.js';
 import { searchScore, SEARCH_THRESHOLD } from '../lib/bangla.js';
+import { canonical } from '../lib/merge.js';
 import { BookRow } from './home.js';
 import { openBookEditor } from './book.js';
 
@@ -90,6 +91,7 @@ async function acquire(lib, entry, ev) {
 export function openCatalogEditor(lib, { entry = null, authorId }) {
   const isHumayun = (lib.catalogByAuthor.get(authorId) || []).some((e) => e.group);
   const st = { title: entry?.title || '', group: entry?.group ?? (isHumayun ? LATER_GROUP.id : ''), year: entry?.year ?? '', note: entry?.note || '', owned: false };
+  const initial = { title: (entry?.title || '').normalize('NFC').trim(), group: entry?.group ?? '', year: entry?.year ?? null, note: (entry?.note || '').trim() };
   openSheet((close) => {
     const save = async (e) => {
       e.preventDefault();
@@ -98,7 +100,10 @@ export function openCatalogEditor(lib, { entry = null, authorId }) {
         const fields = { title: st.title.normalize('NFC').trim(), group: st.group, year: year ? Number(year) || null : null, note: st.note.trim() };
         if (!fields.title) throw new Error('বইয়ের নাম লিখুন');
         if (entry) {
-          await updateRecord(entry.id, fields);
+          // only what changed in this sheet (an edit made meanwhile on the other phone survives)
+          const changed = {};
+          for (const k of Object.keys(fields)) if (canonical(fields[k]) !== canonical(initial[k])) changed[k] = fields[k];
+          if (Object.keys(changed).length) await updateRecord(entry.id, changed);
           toast('তালিকা হালনাগাদ হলো', { type: 'ok' });
         } else {
           const created = await addCatalogEntry({ authorId, ...fields });

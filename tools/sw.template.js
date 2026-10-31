@@ -4,13 +4,13 @@
 // - The app shell is precached per version, so the app opens with no network.
 // - OCR engine files and language data are cached the first time they are used
 //   (only the engine variant the phone needs is downloaded) and survive updates.
-// - config.js is network-first so a newly pasted Firebase config is picked up.
+// - config.js is served from cache and refreshed in the background (new config: next start).
 // - Cross-origin requests (Firebase, Gemini) are never intercepted.
 const VERSION = '__VERSION__';
 const PRECACHE = __PRECACHE__;
 const SHELL = `mazedar-shell-${VERSION}`;
 const RUNTIME = 'mazedar-runtime-v1';
-const NETWORK_FIRST = new Set(['config.js']);
+const FRESH_IN_BACKGROUND = new Set(['config.js']);
 const RUNTIME_PREFIXES = ['vendor/', 'assets/', 'icons/'];
 
 self.addEventListener('install', (event) => {
@@ -59,17 +59,22 @@ async function cacheFirst(request, path) {
   return res;
 }
 
-async function networkFirst(request, path) {
+// config.js: answer from the cache at once and refresh it in the background, so
+// a stalled network (e.g. a crowded book fair) can never hold the app on a
+// blank page. A changed config takes effect from the next start.
+async function staleWhileRevalidate(request, path) {
   const rt = await caches.open(RUNTIME);
-  try {
-    const res = await fetch(request, { cache: 'no-cache' });
+  const cached = await rt.match(path);
+  const refresh = fetch(request, { cache: 'no-cache' }).then(async (res) => {
     if (res.ok) await rt.put(path, res.clone());
     return res;
-  } catch (e) {
-    const hit = await rt.match(path);
-    if (hit) return hit;
-    throw e;
+  });
+  if (cached) {
+    refresh.catch(() => {});
+    return cached;
   }
+  const fallback = () => new Response('window.MAZEDAR_CONFIG = window.MAZEDAR_CONFIG || { firebase: null };', { headers: { 'Content-Type': 'text/javascript; charset=utf-8' } });
+  return Promise.race([refresh, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))]).catch(fallback);
 }
 
 self.addEventListener('fetch', (event) => {
@@ -82,8 +87,8 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fromShell('index.html').then((r) => r || fetch(request)));
     return;
   }
-  if (NETWORK_FIRST.has(path)) {
-    event.respondWith(networkFirst(request, path));
+  if (FRESH_IN_BACKGROUND.has(path)) {
+    event.respondWith(staleWhileRevalidate(request, path));
     return;
   }
   event.respondWith(cacheFirst(request, path));

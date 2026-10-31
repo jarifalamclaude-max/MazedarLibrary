@@ -19,10 +19,13 @@ const NOISE = /প্রকাশ|প্রকাশনী|প্রকাশন
 function guideRect() {
   const vw = innerWidth;
   const vh = innerHeight;
-  const h = Math.min(vh * 0.56, (vw * 0.8) / 0.68);
+  const top = 104; // close button, mode switch, engine pill
+  const bottom = 132 + 64; // shutter bar (+ safe area) and two lines of tip text
+  const avail = Math.max(160, vh - top - bottom);
+  const h = Math.min(avail, (vw * 0.8) / 0.68);
   const w = h * 0.68;
   const x = (vw - w) / 2;
-  const y = Math.max(96, (vh - h) / 2 - 36);
+  const y = top + (avail - h) / 2;
   return { px: { x, y, w, h }, ratio: { x: x / vw, y: y / vh, w: w / vw, h: h / vh } };
 }
 
@@ -71,20 +74,38 @@ export function ScanPage({ query }) {
   const canOnline = !!settings.geminiApiKey && online();
   const useOnline = canOnline && !preferOffline;
 
-  async function startCam() {
-    if (camRef.current) return;
+  const startingRef = useRef(null);
+  const aliveRef = useRef(true);
+
+  function startCam() {
+    if (camRef.current) return Promise.resolve();
+    if (startingRef.current) return startingRef.current;
     setCamErr(null);
-    try {
-      camRef.current = await openCamera(videoRef.current, { facingMode: 'environment' });
-      setPhase((p) => (p === 'starting' || p === 'nocam' ? 'live' : p));
-    } catch (e) {
-      camRef.current = null;
-      setCamErr(e);
-      setPhase('nocam');
-    }
+    const attempt = (async () => {
+      try {
+        const cam = await openCamera(videoRef.current, { facingMode: 'environment' });
+        // closed, hidden or superseded while the camera was starting: release it at once
+        if (!aliveRef.current || document.hidden || startingRef.current !== attempt) {
+          cam.stop();
+          return;
+        }
+        camRef.current = cam;
+        setPhase((p) => (p === 'starting' || p === 'nocam' ? 'live' : p));
+      } catch (e) {
+        if (!aliveRef.current) return;
+        camRef.current = null;
+        setCamErr(e);
+        setPhase('nocam');
+      } finally {
+        if (startingRef.current === attempt) startingRef.current = null;
+      }
+    })();
+    startingRef.current = attempt;
+    return attempt;
   }
 
   function stopCam() {
+    startingRef.current = null; // a start still in flight will stop its own stream
     try { camRef.current?.stop(); } catch { /* ignore */ }
     camRef.current = null;
     setTorch(false);
@@ -98,6 +119,7 @@ export function ScanPage({ query }) {
     document.addEventListener('visibilitychange', onVis);
     warmupOffline({ onProgress: (p) => setWarm(p) }).then(() => setWarm({ done: true })).catch(() => setWarm({ failed: true }));
     return () => {
+      aliveRef.current = false;
       window.removeEventListener('resize', onResize);
       document.removeEventListener('visibilitychange', onVis);
       abortRef.current?.abort();
@@ -154,13 +176,23 @@ export function ScanPage({ query }) {
         }
       }
 
+      if (ac.signal.aborted || abortRef.current !== ac) return; // cancelled while reading
+
       const author = guessAuthor(read, fresh);
       const titleGuess = read.title || guessTitle(read.lines, fresh);
-      const res = { source, read, match: m, author, titleGuess, thumb, isbn, onlineError, canvas };
+      // A title match is only "sure" when the author read on the cover (if any) is the same person.
+      let authorMismatch = false;
+      const readAuthor = source === 'online' ? read.author : author.authorId ? author.authorName : '';
+      if (m.best && readAuthor && m.best.authorName && similarity(readAuthor, m.best.authorName) < 0.8 && !m.best.viaIsbn) {
+        authorMismatch = true;
+        m = { ...m, level: 'possible' };
+      }
+      const unreadable = !titleGuess && !(m.candidates || []).length;
+      const res = { source, read, match: m, author, titleGuess, thumb, isbn, onlineError, canvas, authorMismatch, unreadable, readAuthor };
       setResult(res);
       setPhase('result');
 
-      if (mode === 'add') afterReadForAdd(res, fresh);
+      if (mode === 'add' && !unreadable) afterReadForAdd(res, fresh);
     } catch (e) {
       if (ac.signal.aborted) return;
       toast(`পড়া যায়নি: ${e?.message || e}`, { type: 'err' });
@@ -194,7 +226,7 @@ export function ScanPage({ query }) {
     openBookEditor(fresh, {
       title: entry ? entry.title : res.titleGuess,
       catalogId: entry ? entry.id : null,
-      authorId: entry ? entry.authorId : res.author.authorId || query.author || '',
+      authorId: entry ? entry.authorId : res.author.authorId || (res.author.authorName ? '' : query.author || ''),
       authorName: entry || res.author.authorId ? '' : res.author.authorName || '',
       isbn: res.isbn || '',
       coverDataUrl: res.thumb,
@@ -292,7 +324,7 @@ export function ScanPage({ query }) {
       </div>
     </div>`}
 
-    <input ref=${fileRef} type="file" accept="image/*" capture="environment" class="sr-only" onChange=${pickFile} />
+    <input ref=${fileRef} type="file" accept="image/*" class="sr-only" onChange=${pickFile} />
 
     ${(phase === 'live' || phase === 'starting') && html`<div class="bottom">
       <button class="icon-btn" onClick=${() => fileRef.current.click()} aria-label="গ্যালারি থেকে ছবি"><${Icon} name="image" /></button>
@@ -332,6 +364,19 @@ function ResultView({ result, mode, again, onAdd, canOnline, retryOnline }) {
   const readBox = readText && html`<details style="margin-top:10px"><summary class="faint" style="cursor:pointer">যা পড়া গেছে</summary>
     <div class="read-text" style="margin-top:6px">${readText}</div></details>`;
 
+  if (result.unreadable) {
+    return html`<div>
+      <div class="result-big maybe"><${Icon} name="info" /> মলাটের নাম পড়া যায়নি</div>
+      <p class="muted" style="margin-top:0">ছবিটা ঝাপসা, অন্ধকার, বা লেখা খুব নকশাদার হতে পারে। বইটা আলোতে সোজা করে, ফ্রেম ভরে ধরে আবার চেষ্টা করুন${canOnline ? ', অথবা অনলাইন স্ক্যানার ব্যবহার করুন' : ''}।</p>
+      ${canOnline && html`<button class="btn soft block" onClick=${retryOnline}><${Icon} name="sparkle" /> অনলাইন স্ক্যানারে আবার পড়ুন</button>`}
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn primary" onClick=${again}><${Icon} name="camera" /> আবার স্ক্যান</button>
+        ${mode === 'add' && html`<button class="btn ghost" onClick=${onAdd}>নিজে লিখে যোগ করুন</button>`}
+      </div>
+      ${engineNote}${readBox}
+    </div>`;
+  }
+
   const pickCandidate = (c) => {
     if (c.kind === 'book') navigate(`/b/${c.id}`);
     else navigate(`/a/${lib.catalogById.get(c.id)?.authorId}/missing?focus=${c.id}`);
@@ -361,7 +406,7 @@ function ResultView({ result, mode, again, onAdd, canOnline, retryOnline }) {
       </div>`;
     }
     return html`<div>
-      <div class="result-big"><${Icon} name="book" /> নাম পড়া হয়েছে</div>
+      <div class="result-big"><${Icon} name="book" /> ${result.titleGuess ? 'নাম পড়া হয়েছে' : 'যোগ করার ফর্ম'}</div>
       <button class="btn primary block" onClick=${onAdd}><${Icon} name="plus" /> যোগ করার ফর্ম খুলুন</button>
       <button class="btn ghost block" style="margin-top:8px" onClick=${again}><${Icon} name="camera" /> আবার স্ক্যান করুন</button>
       ${engineNote}${readBox}
@@ -400,9 +445,10 @@ function ResultView({ result, mode, again, onAdd, canOnline, retryOnline }) {
       ${engineNote}${readBox}
     </div>`;
   }
-  if (candidates.length && m.level === 'possible') {
+  if (candidates.length && (m.level === 'possible' || m.level === 'none')) {
     return html`<div>
-      <div class="result-big maybe"><${Icon} name="info" /> নিশ্চিত হওয়া যাচ্ছে না — এর মধ্যে কোনটি?</div>
+      <div class="result-big maybe"><${Icon} name="info" /> ${result.authorMismatch ? 'একই নামের বই আছে, কিন্তু লেখক আলাদা' : 'নিশ্চিত হওয়া যাচ্ছে না — এর মধ্যে কোনটি?'}</div>
+      ${result.authorMismatch && html`<p class="muted" style="margin-top:0">মলাটে লেখক: <b>${result.readAuthor}</b>। নিচের কোনোটি না হলে এটি নতুন বই।</p>`}
       ${candidateList}
       ${canOnline && html`<button class="btn soft block" onClick=${retryOnline}><${Icon} name="sparkle" /> অনলাইন স্ক্যানারে আবার পড়ুন</button>`}
       <div class="btn-row" style="margin-top:10px">

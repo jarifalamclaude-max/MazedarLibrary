@@ -39,11 +39,15 @@ export async function phone(browser, opts = {}) {
 }
 
 function watch(page, errors) {
+  let lastBad = '';
+  page.on('response', (r) => { if (r.status() >= 400) lastBad = `${r.status()} ${r.request().method()} ${r.url().slice(0, 160)}`; });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
     const t = m.text();
     // tesseract's wasm core prints harmless diagnostics ("Parameter not found", "Estimating resolution") on stderr
-    if (m.type() === 'error' && !/favicon|Failed to load resource: net::ERR_INTERNET_DISCONNECTED|Parameter not found|Estimating resolution/.test(t)) errors.push(`console: ${t}`);
+    if (m.type() === 'error' && !/favicon|Failed to load resource: net::ERR_INTERNET_DISCONNECTED|Parameter not found|Estimating resolution/.test(t)) {
+      errors.push(`console: ${t}${/Failed to load resource/.test(t) && lastBad ? ` [${lastBad}]` : ''}`);
+    }
   });
 }
 

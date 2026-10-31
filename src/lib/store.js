@@ -8,8 +8,8 @@
 //
 // Implements the LocalStore interface from docs/ARCHITECTURE.md.
 
-import { createClock, randomId } from './clock.js';
-import { applyChanges, mergeRecords, recordsEqual, sanitize, maxStamp } from './merge.js';
+import { createClock, randomId, parseStamp } from './clock.js';
+import { applyChanges, mergeRecords, recordsEqual, sanitize, maxStamp, isDataField, stampOf, canonical } from './merge.js';
 import { planApplyRemote } from './replica.js';
 
 const DB_NAME = 'mazedar-library';
@@ -224,6 +224,7 @@ export async function openStore({ dbName = DB_NAME } = {}) {
       const changed = [];
       for (const raw of incoming) {
         if (!raw || typeof raw.id !== 'string') continue;
+        clock.observe(maxStamp(raw)); // our next edit must sort after anything we have seen
         const cur = await req(os.get(raw.id));
         const plan = planApplyRemote(cur, raw);
         if (plan.changed) {
@@ -322,31 +323,50 @@ export async function openStore({ dbName = DB_NAME } = {}) {
   }
 
   /**
-   * Make the library look like the snapshot again: changed fields are re-applied
-   * as new edits (so they win and sync), records created after it go to trash.
+   * Undo what happened after the snapshot was taken: every field edited after
+   * that moment goes back to its value in the snapshot (re-applied as a new
+   * edit, so it wins and syncs), and records created after it go to trash.
+   * Edits made earlier — including ones from the other phone that only arrived
+   * after the snapshot — are left alone.
    */
   async function restoreSnapshot(id) {
     const t = db.transaction('snapshots', 'readonly');
     const snap = await req(t.objectStore('snapshots').get(id));
     if (!snap) throw new Error('snapshot not found');
     await snapshot('পুনরুদ্ধারের আগে');
+    const cutoff = snap.ts;
+    const later = (stamp) => {
+      const p = parseStamp(stamp);
+      return !!p && p.l > cutoff;
+    };
     const inSnap = new Map(snap.records.map((r) => [r.id, r]));
     const edits = [];
-    for (const r of snap.records) {
-      const cur = records.get(r.id);
-      const changes = { id: r.id, kind: r.kind };
-      let any = !cur;
-      for (const [k, v] of Object.entries(sanitize(r))) {
-        if (k === 'id' || k === 'kind' || k === '_v') continue;
-        if (!cur || JSON.stringify(cur[k]) !== JSON.stringify(v)) {
-          changes[k] = v;
+    for (const cur of records.values()) {
+      const old = inSnap.get(cur.id);
+      const changes = { id: cur.id };
+      let any = false;
+      if (old) {
+        for (const k of new Set([...Object.keys(cur), ...Object.keys(old)])) {
+          if (!isDataField(k) || !later(stampOf(cur, k))) continue;
+          const v = old[k] === undefined ? null : old[k];
+          if (canonical(v) !== canonical(cur[k] === undefined ? null : cur[k])) {
+            changes[k] = v;
+            any = true;
+          }
+        }
+      } else {
+        const stamps = Object.values(cur._v || {});
+        if (!cur.deleted && stamps.length && stamps.every(later)) {
+          Object.assign(changes, { deleted: true, deletedAt: Date.now() });
           any = true;
         }
       }
       if (any) edits.push(changes);
     }
-    for (const cur of records.values()) {
-      if (!inSnap.has(cur.id) && !cur.deleted) edits.push({ id: cur.id, deleted: true, deletedAt: Date.now() });
+    for (const old of snap.records) {
+      if (records.has(old.id)) continue; // still here: handled above
+      const { _v, ...fields } = sanitize(old);
+      edits.push(fields);
     }
     if (edits.length) await putMany('records', edits);
     return edits.length;
