@@ -23,6 +23,8 @@ const TYPES = {
   '.txt': 'text/plain; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8',
   '.pdf': 'application/pdf',
+  '.mp4': 'video/mp4',
+  '.webp': 'image/webp',
 };
 
 export function startServer({ port = 8080, root = resolve(fileURLToPath(import.meta.url), '../..') } = {}) {

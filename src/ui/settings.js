@@ -377,6 +377,7 @@ export function SettingsPage({ lib, cloudState, query }) {
         <${Lily} size=${90} />
         <div class="brand-name" style="font-size:30px">মাজেদার <b>লাইব্রেরি</b></div>
         <p class="muted" style="margin:4px 0 10px">বইয়ের জন্য একটা ছোট্ট বাগান 🌷</p>
+        <a class="btn soft sm" href="docs/promo/mazedar-library-promo.mp4" target="_blank" rel="noopener" style="margin-bottom:12px">🎬 প্রোমো ভিডিও দেখুন</a>
         <p class="faint" style="margin:0">হুমায়ূন আহমেদের সম্পূর্ণ তালিকা: দেওয়া PDF-এর ২১৯টি নাম + সংগ্রহে থাকা আরো ১৭টি। সব তথ্য বদলানো যায়।</p>
         <p class="faint">সংস্করণ ${bn(globalThis.MAZEDAR_VERSION || '১.০.০')} · <a href="https://github.com/jarifalamclaude-max/MazedarLibrary" target="_blank" rel="noopener">GitHub</a></p>
         <button class="btn ghost sm" onClick=${() => globalThis.mazedarCheckUpdate?.()}><${Icon} name="refresh" /> নতুন সংস্করণ আছে কি না দেখুন</button>

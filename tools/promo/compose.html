@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<title>মাজেদার লাইব্রেরি — promo</title>
+<link rel="stylesheet" href="../../assets/fonts/fonts.css">
+<style>
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; }
+  body { font-family: 'Hind Siliguri', sans-serif; color: #3a2136;
+    background: radial-gradient(1100px 900px at 10% 0%, #ffe3ee 0%, transparent 65%),
+                radial-gradient(1000px 900px at 100% 100%, #e7dcfb 0%, transparent 60%),
+                linear-gradient(170deg, #fff7f5 0%, #fdeef3 55%, #f3ecfd 100%); }
+  .abs { position: absolute; }
+  #petals i { position: absolute; width: 26px; height: 34px; border-radius: 80% 0 80% 0; background: linear-gradient(135deg, #fff, #ffc9dc); opacity: .75; }
+  .cap { position: absolute; left: 70px; right: 70px; top: 150px; text-align: center; }
+  .cap h2 { margin: 0; font-size: 78px; font-weight: 700; line-height: 1.25; letter-spacing: .2px; }
+  .cap p { margin: 22px 0 0; font-size: 42px; font-weight: 500; color: #6b5066; line-height: 1.45; }
+  .cap h2 b { color: #c43a74; font-weight: 700; }
+  .phone { position: absolute; width: 632px; height: 1386px; border-radius: 74px; background: #1d1219; padding: 44px 16px; box-sizing: border-box;
+    box-shadow: 0 60px 120px rgba(120, 40, 90, .35), 0 0 0 3px #3b2a35 inset; }
+  .phone .screen { position: relative; width: 600px; height: 1298px; border-radius: 58px; overflow: hidden; background: #fff7f5; }
+  .phone .screen img { position: absolute; left: 0; top: 0; width: 600px; }
+  .phone .island { position: absolute; left: 50%; top: 15px; width: 120px; height: 14px; margin-left: -60px; background: #3b2a35; border-radius: 10px; z-index: 5; }
+  .ripple { position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 6px solid #d6457c; background: rgba(214, 69, 124, .18); z-index: 6; }
+  .glow { position: absolute; border-radius: 40px; box-shadow: 0 0 0 6px #e0588e, 0 0 60px 10px rgba(224, 88, 142, .55); z-index: 6; }
+  .title { font-family: 'Galada', serif; font-size: 150px; line-height: 1.1; color: #d6457c; text-align: center; }
+  .title b { color: #8a68c8; font-weight: 400; }
+  .chip { display: inline-block; margin: 10px; padding: 18px 34px; border-radius: 60px; background: #fff; box-shadow: 0 10px 30px rgba(150, 50, 100, .15); font-size: 40px; font-weight: 600; }
+  .sync-dot { position: absolute; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle, #fff 0%, #e0588e 60%); box-shadow: 0 0 30px #e0588e; z-index: 8; }
+  .cloud { position: absolute; left: 490px; top: 640px; width: 100px; height: 100px; border-radius: 50%; background: #fff; box-shadow: 0 16px 40px rgba(120,40,90,.25); display: grid; place-items: center; z-index: 7; }
+</style>
+</head>
+<body>
+<div id="petals" class="abs" style="inset:0"></div>
+
+<!-- intro / outro -->
+<div id="intro" class="abs" style="left:0;right:0;top:420px;text-align:center">
+  <img id="introIcon" src="../../icons/icon-512.png" width="360" height="360" style="border-radius:80px;box-shadow:0 40px 90px rgba(150,50,100,.3)">
+  <div id="introTitle" class="title" style="margin-top:60px">মাজেদার <b>লাইব্রেরি</b></div>
+  <div id="introTag" style="font-size:52px;font-weight:500;color:#6b5066;margin-top:26px">বইয়ের জন্য একটা ছোট্ট বাগান 🌷</div>
+</div>
+<div id="outro" class="abs" style="left:0;right:0;top:300px;text-align:center">
+  <img src="../../icons/icon-512.png" width="300" height="300" style="border-radius:70px;box-shadow:0 40px 90px rgba(150,50,100,.3)">
+  <div class="title" style="margin-top:46px">মাজেদার <b>লাইব্রেরি</b></div>
+  <div id="outroChips" style="margin-top:50px">
+    <span class="chip">📶 ইন্টারনেট ছাড়াও চলে</span><br>
+    <span class="chip">📱📱 দুই ফোনে একসাথে</span><br>
+    <span class="chip">🔒 তথ্য কখনো হারায় না</span>
+  </div>
+  <div id="outroUrl" style="margin-top:70px;font-size:38px;color:#8a68c8;font-weight:600">jarifalamclaude-max.github.io/MazedarLibrary</div>
+  <div id="outroLove" style="margin-top:26px;font-size:44px;color:#c43a74;font-weight:600">ভালোবাসা দিয়ে বানানো 🌷</div>
+</div>
+
+<!-- captions -->
+<div class="cap" id="cap1"><h2>সব বই <b>এক জায়গায়</b></h2><p>লেখকের নামে ফোল্ডার, বাংলা বর্ণানুক্রমে সাজানো</p></div>
+<div class="cap" id="cap2"><h2>হুমায়ূন আহমেদের <b>হিসাব</b></h2><p>সব বই পেতে আরো কয়টি লাগবে — সবসময় গুনে রাখে</p></div>
+<div class="cap" id="cap3"><h2>নতুন বই পেলেই <b>“পেয়েছি”</b></h2><p>এক চাপে সংগ্রহে — বাকির সংখ্যা কমে যায়</p></div>
+<div class="cap" id="cap4"><h2><b>Banglish</b>-এও খোঁজা যায়</h2><p>himu লিখলেই হিমু — বানান ভুলেও খুঁজে পায়</p></div>
+<div class="cap" id="cap5"><h2>মলাট দেখালেই <b>চিনে ফেলে</b></h2><p>ক্যামেরা ধরুন — ইন্টারনেট ছাড়াও, বইমেলাতেও</p></div>
+<div class="cap" id="cap6"><h2>দুই ফোনে, <b>একই লাইব্রেরি</b></h2><p>একজন যোগ করলে অন্যজনের ফোনে সাথে সাথে</p></div>
+<div class="cap" id="cap7"><h2>রাতের জন্য <b>গাঢ় রঙ</b></h2><p>চোখে আরাম, লিলি ফুলের সাজ সবসময়</p></div>
+
+<!-- single phone -->
+<div class="phone" id="phone" style="left:224px;top:500px">
+  <div class="island"></div>
+  <div class="screen" id="screen">
+    <img id="s-home" src="../../.tmp/promo/shots/home-full.png">
+    <img id="s-humayun" src="../../.tmp/promo/shots/humayun.png">
+    <img id="s-missing" src="../../.tmp/promo/shots/missing.png">
+    <img id="s-missing-after" src="../../.tmp/promo/shots/missing-after.png">
+    <img id="s-missing-top" src="../../.tmp/promo/shots/missing-after-top.png">
+    <img id="s-search-1" src="../../.tmp/promo/shots/search-1.png">
+    <img id="s-search-2" src="../../.tmp/promo/shots/search-2.png">
+    <img id="s-search-3" src="../../.tmp/promo/shots/search-3.png">
+    <img id="s-search-4" src="../../.tmp/promo/shots/search-4.png">
+    <img id="s-scan-live" src="../../.tmp/promo/shots/scan-live.png">
+    <img id="s-scan-reading" src="../../.tmp/promo/shots/scan-reading.png">
+    <img id="s-scan-result" src="../../.tmp/promo/shots/scan-result.png">
+    <img id="s-dark" src="../../.tmp/promo/shots/dark-humayun.png">
+    <div class="ripple" id="ripple"></div>
+    <div class="glow" id="glow"></div>
+  </div>
+</div>
+
+<!-- two phones -->
+<div class="phone" id="phoneA" style="left:0;top:0">
+  <div class="island"></div>
+  <div class="screen">
+    <img id="a-form" src="../../.tmp/promo/shots/sync-a-form.png">
+    <img id="a-added" src="../../.tmp/promo/shots/sync-a-added.png">
+  </div>
+</div>
+<div class="phone" id="phoneB" style="left:0;top:0">
+  <div class="island"></div>
+  <div class="screen">
+    <img id="b-before" src="../../.tmp/promo/shots/sync-b-before.png">
+    <img id="b-after" src="../../.tmp/promo/shots/sync-b-after.png">
+  </div>
+</div>
+<div class="cloud" id="cloud"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#d6457c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.1 11.6 3.3 3.3 0 0 0 7 18z"/></svg></div>
+<div class="sync-dot" id="syncDot"></div>
+
+<script>
+  // ---------------------------------------------------------------- timeline helpers
+  const $ = (id) => document.getElementById(id);
+  const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+  const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const outCubic = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const win = (t, a, b, fi = 0.35, fo = 0.35) => Math.min(ease((t - a) / fi), ease((b - t) / fo)); // fade in/out window
+  const set = (el, o, tf = '') => { el.style.opacity = o.toFixed(3); el.style.transform = tf; el.style.visibility = o > 0.001 ? 'visible' : 'hidden'; };
+  const S = 600 / 780; // screenshot px -> phone screen px
+  const meta = window.PROMO_META;
+
+  const SCENES = { intro: [0, 3.2], lib: [3.2, 7.4], count: [7.4, 11.6], got: [11.6, 15.8], search: [15.8, 19.8], scan: [19.8, 25.0], sync: [25.0, 29.6], dark: [29.6, 32.6], outro: [32.6, 36.0] };
+  window.DURATION = 36.0;
+
+  // deterministic falling petals
+  const P = 26;
+  const petals = [];
+  for (let i = 0; i < P; i += 1) {
+    const el = document.createElement('i');
+    $('petals').appendChild(el);
+    petals.push({ el, x: (i * 431) % 1080, speed: 70 + ((i * 37) % 60), phase: (i * 0.37) % 1, rot: (i % 2 ? 1 : -1) * (20 + (i * 13) % 40), s: 0.6 + ((i * 7) % 6) / 10 });
+  }
+
+  function screenLayers(t, layers) {
+    for (const [id, o, tf] of layers) set($(id), o, tf || '');
+  }
+
+  function render(t) {
+    // petals
+    for (const p of petals) {
+      const y = ((t * p.speed + p.phase * 2100) % 2100) - 120;
+      const x = p.x + Math.sin(t * 0.8 + p.phase * 6) * 50;
+      p.el.style.transform = `translate(${x}px, ${y}px) rotate(${t * p.rot}deg) scale(${p.s})`;
+    }
+
+    // intro
+    const iA = SCENES.intro;
+    set($('intro'), win(t, -1, iA[1], 0.01, 0.45));
+    set($('introIcon'), outCubic(t / 1.1), `scale(${0.6 + 0.4 * outCubic(t / 1.1)}) rotate(${-12 * (1 - outCubic(t / 1.1))}deg)`);
+    set($('introTitle'), ease((t - 0.5) / 0.8), `translateY(${40 * (1 - outCubic((t - 0.5) / 0.8))}px)`);
+    set($('introTag'), ease((t - 1.1) / 0.8), `translateY(${30 * (1 - outCubic((t - 1.1) / 0.8))}px)`);
+
+    // outro
+    const oA = SCENES.outro;
+    const o = ease((t - oA[0]) / 0.6);
+    set($('outro'), o, `translateY(${50 * (1 - outCubic((t - oA[0]) / 0.7))}px)`);
+    set($('outroChips'), ease((t - oA[0] - 0.4) / 0.6));
+    set($('outroUrl'), ease((t - oA[0] - 0.9) / 0.6));
+    set($('outroLove'), ease((t - oA[0] - 1.3) / 0.6));
+
+    // captions
+    const caps = [['cap1', 'lib'], ['cap2', 'count'], ['cap3', 'got'], ['cap4', 'search'], ['cap5', 'scan'], ['cap6', 'sync'], ['cap7', 'dark']];
+    for (const [id, sc] of caps) {
+      const [a, b] = SCENES[sc];
+      const v = win(t, a + 0.1, b - 0.05, 0.4, 0.3);
+      set($(id), v, `translateY(${24 * (1 - v)}px)`);
+    }
+
+    // single phone visibility: from lib to scan, then dark
+    // cross-fade with the neighbouring scenes instead of dipping to an empty background
+    const inSingle = Math.max(win(t, SCENES.lib[0] - 0.35, SCENES.scan[1] + 0.2, 0.7, 0.45), win(t, SCENES.dark[0] - 0.45, SCENES.dark[1], 0.55, 0.45));
+    let phoneTf = `translateY(${260 * (1 - ease((t - SCENES.lib[0] + 0.35) / 0.8))}px)`;
+    // zoom on the counter
+    const [ca, cb] = SCENES.count;
+    const z = Math.min(ease((t - ca - 1.0) / 0.8), ease((cb - 0.5 - t) / 0.6));
+    const zx = 16 + meta.counter.x * S;
+    const zy = 44 + meta.counter.y * S;
+    $('phone').style.transformOrigin = `${zx}px ${zy}px`;
+    if (z > 0) phoneTf += ` scale(${1 + 0.32 * z})`;
+    set($('phone'), inSingle, phoneTf);
+
+    // screens
+    const lib = SCENES.lib;
+    const homeH = 2882 * S;
+    const pan = ease((t - lib[0] - 1.0) / 2.6) * (homeH - 1298);
+    const cnt = SCENES.count;
+    const got = SCENES.got;
+    const se = SCENES.search;
+    const sc = SCENES.scan;
+    const dk = SCENES.dark;
+    const cross = (a, d = 0.35) => ease((t - a) / d);
+    screenLayers(t, [
+      ['s-home', t < cnt[0] + 0.4 ? 1 : 1 - cross(cnt[0], 0.4), `translateY(${-pan}px)`],
+      ['s-humayun', t < got[0] ? cross(cnt[0], 0.4) : (t < dk[0] ? 1 - cross(got[0], 0.4) : 1 - cross(dk[0] + 0.9, 0.7))],
+      ['s-missing', t < got[0] + 1.6 ? cross(got[0], 0.4) * (t < got[0] + 1.6 ? 1 : 0) : 1 - cross(got[0] + 1.6, 0.2)],
+      ['s-missing-after', t < got[0] + 2.9 ? cross(got[0] + 1.6, 0.2) : 1 - cross(got[0] + 2.9, 0.4)],
+      ['s-missing-top', t < se[0] ? cross(got[0] + 2.9, 0.4) : 1 - cross(se[0], 0.35)],
+      ['s-search-1', t < se[0] + 1.0 ? cross(se[0], 0.35) : 0],
+      ['s-search-2', t >= se[0] + 1.0 && t < se[0] + 1.5 ? 1 : 0],
+      ['s-search-3', t >= se[0] + 1.5 && t < se[0] + 2.0 ? 1 : 0],
+      ['s-search-4', t < sc[0] ? (t >= se[0] + 2.0 ? 1 : 0) : 1 - cross(sc[0], 0.35)],
+      ['s-scan-live', t < sc[0] + 1.85 ? cross(sc[0], 0.35) : 1 - cross(sc[0] + 1.85, 0.2)],
+      ['s-scan-reading', t < sc[0] + 2.9 ? cross(sc[0] + 1.85, 0.2) : 1 - cross(sc[0] + 2.9, 0.3)],
+      ['s-scan-result', cross(sc[0] + 2.9, 0.3)],
+      ['s-dark', cross(dk[0] + 0.9, 0.7)],
+    ]);
+    // dark scene starts from the light Humayun page again
+    // (from the moment the dark scene starts fading in, while the two phones fade out)
+    if (t >= dk[0] - 0.46) set($('s-humayun'), 1 - cross(dk[0] + 0.9, 0.7));
+    if (t >= dk[0] - 0.46) for (const id of ['s-home', 's-scan-live', 's-scan-reading', 's-scan-result', 's-missing-top', 's-search-4']) set($(id), 0);
+
+    // glow around the counter card
+    const g = Math.min(ease((t - cnt[0] - 1.5) / 0.4), ease((cnt[1] - 0.7 - t) / 0.4));
+    $('glow').style.left = `${meta.counter.x * S - 285}px`;
+    $('glow').style.top = `${meta.counter.y * S - 125}px`;
+    $('glow').style.width = '570px';
+    $('glow').style.height = '250px';
+    set($('glow'), g * (0.75 + 0.25 * Math.sin(t * 7)));
+
+    // tap ripples
+    const tap = (at, p) => {
+      const k = (t - at) / 0.55;
+      if (k < 0 || k > 1) return false;
+      $('ripple').style.left = `${p.x * S}px`;
+      $('ripple').style.top = `${p.y * S}px`;
+      set($('ripple'), 1 - k, `scale(${0.5 + k * 0.9})`);
+      return true;
+    };
+    if (!tap(got[0] + 1.25, meta.gotIt) && !tap(sc[0] + 1.45, meta.shutter)) set($('ripple'), 0);
+
+    // two phones
+    const sy = SCENES.sync;
+    const two = win(t, sy[0] - 0.25, sy[1], 0.6, 0.45);
+    const slide = 1 - outCubic((t - sy[0]) / 0.8);
+    set($('phoneA'), two, `translate(${70 - 140 * slide}px, 560px) scale(0.71)`);
+    set($('phoneB'), two, `translate(${560 + 140 * slide}px, 560px) scale(0.71)`);
+    $('phoneA').style.transformOrigin = '0 0';
+    $('phoneB').style.transformOrigin = '0 0';
+    const addAt = sy[0] + 1.3;
+    const arriveAt = sy[0] + 2.4;
+    set($('a-form'), 1 - cross(addAt, 0.3));
+    set($('a-added'), cross(addAt, 0.3));
+    set($('b-before'), 1 - cross(arriveAt, 0.35));
+    set($('b-after'), cross(arriveAt, 0.35));
+    set($('cloud'), two, `scale(${0.9 + 0.1 * two})`);
+    const dk2 = (t - addAt - 0.15) / (arriveAt - addAt - 0.15);
+    if (dk2 > 0 && dk2 < 1) {
+      const x = 330 + dk2 * 420;
+      const y = 700 - Math.sin(dk2 * Math.PI) * 140;
+      $('syncDot').style.left = `${x}px`;
+      $('syncDot').style.top = `${y}px`;
+      set($('syncDot'), Math.sin(dk2 * Math.PI) * 0.6 + 0.4);
+    } else set($('syncDot'), 0);
+  }
+  window.render = render;
+  window.imagesReady = () => Promise.all([...document.images].map((im) => (im.complete ? 0 : new Promise((r) => { im.onload = r; im.onerror = r; }))))
+    .then(() => document.fonts.ready);
+</script>
+</body>
+</html>

@@ -5,6 +5,11 @@
 **ঠিকানা:** https://jarifalamclaude-max.github.io/MazedarLibrary/ (GitHub Pages চালু করার পর — [সেটআপ গাইড](docs/SETUP.md))
 
 <p align="center">
+  <a href="docs/promo/mazedar-library-promo.mp4"><img src="docs/promo/teaser.webp" width="300" alt="মাজেদার লাইব্রেরি — প্রোমো ভিডিও (চাপ দিয়ে পুরোটা দেখুন)"></a><br>
+  <b>🎬 <a href="docs/promo/mazedar-library-promo.mp4">প্রোমো ভিডিও দেখুন</a></b> (৩৬ সেকেন্ড, শব্দসহ)
+</p>
+
+<p align="center">
   <img src="docs/screenshots/1-home.jpg" width="190" alt="প্রথম পাতা">
   <img src="docs/screenshots/2-humayun.jpg" width="190" alt="হুমায়ূন আহমেদের ফোল্ডার ও কাউন্টার">
   <img src="docs/screenshots/3-missing.jpg" width="190" alt="সংগ্রহে নেই তালিকা">

@@ -2,6 +2,7 @@
 // works with no network once the files are cached. Browser only.
 
 const BASE = new URL('../../vendor/tesseract/', import.meta.url).href;
+const bnDigit = (n) => String(n).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[d]);
 const IDLE_MS = 3 * 60 * 1000;
 const READY_KEY = 'mazedar:ocrReady';
 const RUNTIME_CACHE = 'mazedar-runtime-v1'; // same cache the service worker serves vendor/ files from
@@ -264,7 +265,7 @@ export function ocrOffline(canvas, { onProgress, signal } = {}) {
       const results = [];
       for (const v of variants) {
         if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
-        onProgress?.(`ফোনেই নাম পড়া হচ্ছে… (${results.length + 1}/${variants.length})`);
+        onProgress?.(`ফোনেই নাম পড়া হচ্ছে… (${bnDigit(results.length + 1)}/${bnDigit(variants.length)})`);
         const { data } = await withTimeout(worker.recognize(v.canvas, {}, { text: true, tsv: true }), JOB_TIMEOUT_MS, 'পড়তে অনেক সময় লাগছে — আবার চেষ্টা করুন')
           .catch((e) => { resetWorker(worker); throw e; });
         const lines = parseTsv(data.tsv);
