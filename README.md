@@ -4,6 +4,14 @@
 
 **ঠিকানা:** https://jarifalamclaude-max.github.io/MazedarLibrary/ (GitHub Pages চালু করার পর — [সেটআপ গাইড](docs/SETUP.md))
 
+<p align="center">
+  <img src="docs/screenshots/1-home.jpg" width="190" alt="প্রথম পাতা">
+  <img src="docs/screenshots/2-humayun.jpg" width="190" alt="হুমায়ূন আহমেদের ফোল্ডার ও কাউন্টার">
+  <img src="docs/screenshots/3-missing.jpg" width="190" alt="সংগ্রহে নেই তালিকা">
+  <img src="docs/screenshots/4-banglish-search.jpg" width="190" alt="Banglish-এ খোঁজা">
+  <img src="docs/screenshots/5-book-dark.jpg" width="190" alt="বইয়ের পাতা, গাঢ় রঙে">
+</p>
+
 ## কী কী করা যায়
 - **লেখকের নামে ফোল্ডার** — প্রতিটি লেখকের বই আলাদা, প্রত্যেকের পাশে বইয়ের সংখ্যা।
 - **হুমায়ূন আহমেদের কাউন্টার** — সংগ্রহে কয়টি আছে, আর সব বই পেতে **আরো কয়টি লাগবে** (সম্পূর্ণ তালিকা ২৩৬টি নাম, এখন ১২৪টি বাকি)। “সংগ্রহে নেই” তালিকা থেকে “পেয়েছি” চাপলেই যোগ হয়; নতুন নাম পেলে তালিকায় যোগ করা যায়। চাইলে যেকোনো লেখকের জন্যও এমন তালিকা বানানো যায়।

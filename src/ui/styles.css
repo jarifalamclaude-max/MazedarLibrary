@@ -518,3 +518,7 @@ img { max-width: 100%; }
   body { background: #fff; }
   .app { padding: 0; max-width: none; }
 }
+
+/* one clear button in search boxes (ours), not the browser's as well */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }

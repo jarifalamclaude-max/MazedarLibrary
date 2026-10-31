@@ -6,7 +6,7 @@
 //   (only the engine variant the phone needs is downloaded) and survive updates.
 // - config.js is network-first so a newly pasted Firebase config is picked up.
 // - Cross-origin requests (Firebase, Gemini) are never intercepted.
-const VERSION = '3483d5d28029';
+const VERSION = '3efc66787e9c';
 const PRECACHE = [
   "assets/fonts/fonts.css",
   "assets/fonts/galada-bengali-400-normal.woff2",
