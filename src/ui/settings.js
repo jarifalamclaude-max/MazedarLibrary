@@ -17,8 +17,8 @@ const READ_LABEL = { '': 'পড়া হয়নি', reading: 'পড়ছ�
 function openConfigSheet() {
   let text = '';
   openSheet((close) => html`<div>
-    <h3>ক্লাউড সিঙ্ক সেটআপ</h3>
-    <p class="muted" style="margin-top:0">Firebase কনসোল থেকে পাওয়া <b>firebaseConfig</b> অংশটুকু এখানে পেস্ট করুন। ধাপগুলো <a href=${GUIDE_URL} target="_blank" rel="noopener">সেটআপ গাইডে</a> আছে।</p>
+    <h3>ক্লাউড সেটআপ (একবারই)</h3>
+    <p class="muted" style="margin-top:0">Firebase কনসোল থেকে পাওয়া <b>firebaseConfig</b> অংশটুকু এখানে পেস্ট করুন। অ্যাপটি Firebase-এর নিজের ঠিকানায় (<b>…web.app</b>) খুললে এটা লাগে না — সব নিজে থেকেই হয়। ধাপগুলো <a href=${GUIDE_URL} target="_blank" rel="noopener">সেটআপ গাইডে</a> আছে।</p>
     <textarea class="textarea" style="min-height:160px;font-family:ui-monospace,monospace;font-size:13px" placeholder=${'const firebaseConfig = {\n  apiKey: "…",\n  authDomain: "…",\n  projectId: "…",\n  …\n};'}
       onInput=${(e) => { text = e.target.value; }} />
     <div class="btn-row" style="margin-top:12px">
@@ -49,10 +49,11 @@ function QrCode({ text }) {
 function openLinkDevice() {
   const cfg = readConfig();
   if (!cfg) return;
-  const link = makeSetupLink(cfg);
+  // On Firebase Hosting the address alone is enough; elsewhere the link carries the (public) config.
+  const link = cfg.source === 'hosting' ? location.href.split('#')[0] : makeSetupLink(cfg);
   openSheet((close) => html`<div>
-    <h3>অন্য ফোন যুক্ত করুন</h3>
-    <p class="muted" style="margin-top:0">অন্য ফোনের ক্যামেরা দিয়ে এই QR কোডটি স্ক্যান করুন (অথবা লিংকটি পাঠান)। খুললে একই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করবেন — তারপর দুই ফোনেই একসাথে একই লাইব্রেরি।</p>
+    <h3>অন্য ফোনে খুলুন</h3>
+    <p class="muted" style="margin-top:0">অন্য ফোনের ক্যামেরা দিয়ে এই QR কোডটি স্ক্যান করুন (অথবা লিংকটি পাঠান)। খুলে <b>Google দিয়ে লগইন</b> করলেই হবে — নিজের লাইব্রেরি, বা আপনি যোগ করে দিলে আপনার লাইব্রেরিই দেখাবে।</p>
     <${QrCode} text=${link} />
     <div class="code" style="margin:8px 0">${link}</div>
     <div class="btn-row">
@@ -63,6 +64,21 @@ function openLinkDevice() {
       <button class="btn ghost" onClick=${close}>বন্ধ</button>
     </div>
   </div>`);
+}
+
+const GoogleG = () => html`<svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true" width="20" height="20">
+  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+</svg>`;
+
+function GoogleButton({ cloud, state }) {
+  const busy = state.phase === 'busy';
+  return html`<button class="btn google" disabled=${busy || state.googleMode === 'unavailable'} onClick=${() => {
+    // No await before this call: Safari only allows the Google window straight from a tap.
+    cloud.signInWithGoogle().catch(() => {});
+  }}>${busy ? html`<${Icon} name="refresh" className="spin" />` : html`<${GoogleG} />`} Google দিয়ে লগইন</button>`;
 }
 
 function LoginForm({ cloud, state }) {
@@ -81,13 +97,12 @@ function LoginForm({ cloud, state }) {
     }
   };
   return html`<form onSubmit=${(e) => { e.preventDefault(); go('in'); }} class="stack">
-    <p class="muted" style="margin:0">দুজনেই <b>একই ইমেইল ও পাসওয়ার্ড</b> দিয়ে লগইন করবেন — তাহলে দুই ফোনে একসাথে একই লাইব্রেরি দেখা ও বদলানো যাবে।</p>
+    <p class="muted" style="margin:0">এভাবে দুজনেই <b>একই ইমেইল ও পাসওয়ার্ড</b> দিয়ে লগইন করবেন। (Firebase-এ Email/Password চালু থাকতে হবে।)</p>
     <label class="field" style="margin:0"><span>ইমেইল</span><input class="input" type="email" autocomplete="username" value=${email} onInput=${(e) => setEmail(e.target.value)} /></label>
     <label class="field" style="margin:0"><span>পাসওয়ার্ড</span>
       <div class="row"><input class="input grow" type=${show ? 'text' : 'password'} autocomplete="current-password" value=${pw} onInput=${(e) => setPw(e.target.value)} />
       <button type="button" class="icon-btn" onClick=${() => setShow(!show)} aria-label="পাসওয়ার্ড দেখান"><${Icon} name=${show ? 'eyeOff' : 'eye'} /></button></div>
     </label>
-    ${state.error && html`<${Notice} kind="err" icon="alert">${state.error}<//>`}
     <div class="btn-row">
       <button class="btn primary" type="submit" disabled=${busy}><${Icon} name="user" /> লগইন</button>
       <button class="btn soft" type="button" disabled=${busy} onClick=${() => go('up')}>নতুন অ্যাকাউন্ট খুলুন</button>
@@ -99,6 +114,98 @@ function LoginForm({ cloud, state }) {
   </form>`;
 }
 
+function SignInPanel({ cloud, state }) {
+  const cfg = readConfig();
+  const unavailable = state.googleMode === 'unavailable';
+  return html`<div class="stack">
+    <p class="muted" style="margin:0">নিজের <b>Google অ্যাকাউন্ট</b> দিয়ে লগইন করুন — কোনো পাসওয়ার্ড মনে রাখতে হবে না। দুজনের দুই অ্যাকাউন্ট হলে লাইব্রেরির মালিক এখানেই অন্যজনের Gmail যোগ করে দেবেন, তারপর দুই ফোনে একই লাইব্রেরি।</p>
+    <${GoogleButton} cloud=${cloud} state=${state} />
+    ${unavailable && html`<${Notice} kind="warn" icon="alert">iPhone-এর হোম-স্ক্রিন অ্যাপে এই ঠিকানা থেকে Google লগইন করা যায় না (iOS-এর নিয়ম)।
+      ${cfg?.projectId ? html` অ্যাপটি <b>https://${cfg.projectId}.web.app</b> ঠিকানা থেকে Safari-তে খুলে হোম-স্ক্রিনে যোগ করুন — সেখানে Google লগইন চলে।` : ''} অথবা নিচের ইমেইল-পাসওয়ার্ড ব্যবহার করুন।<//>`}
+    ${state.error && html`<${Notice} kind="err" icon="alert">${state.error}<//>`}
+    <details class="more-login" open=${unavailable}>
+      <summary>ইমেইল-পাসওয়ার্ড দিয়ে লগইন</summary>
+      <${LoginForm} cloud=${cloud} state=${state} />
+    </details>
+  </div>`;
+}
+
+/** Joining another library: what happens to the books already on this phone? */
+async function chooseJoin(cloud, invite) {
+  const local = ctx.store.localChangeCount?.() || 0;
+  let replace = false;
+  if (local > 0) {
+    replace = await new Promise((resolve) => {
+      let settled = false;
+      const finish = (v) => { if (!settled) { settled = true; resolve(v); } };
+      openSheet((close) => html`<div>
+        <h3>এই ফোনের বইগুলো?</h3>
+        <p class="muted" style="margin-top:0">এই ফোনে নিজে যোগ করা বা বদলানো <b>${bn(local)}টি</b> জিনিস আছে। ${invite.ownerName || invite.ownerEmail}-এর লাইব্রেরিতে যোগ দেওয়ার সময় এগুলো—</p>
+        <div class="stack">
+          <button class="btn primary" onClick=${() => { finish(false); close(); }}>ওই লাইব্রেরিতে মিশিয়ে দিন</button>
+          <button class="btn soft" onClick=${() => { finish(true); close(); }}>বাদ দিন (আগে ব্যাকআপ রাখা হবে)</button>
+          <button class="btn ghost" onClick=${() => { finish(null); close(); }}>বাতিল</button>
+        </div>
+      </div>`, { className: 'dialog', onClose: () => finish(null) });
+    });
+    if (replace === null) return;
+  }
+  try {
+    await cloud.joinLibrary(invite.id, { replace });
+    toast(`${invite.ownerName || invite.ownerEmail}-এর লাইব্রেরিতে যোগ দিয়েছেন 🌸`, { type: 'ok' });
+  } catch (e) {
+    toast(authErrorText(e), { type: 'err' });
+  }
+}
+
+function InviteList({ cloud, invites }) {
+  return html`<div class="stack">
+    ${invites.map((inv) => html`<div class="invite" key=${inv.id}>
+      <span class="ic"><${Lily} size=${34} /></span>
+      <div class="grow"><b>${inv.ownerName || inv.ownerEmail}-এর লাইব্রেরি</b>${inv.ownerName && html`<div class="faint">${inv.ownerEmail}</div>`}</div>
+      <button class="btn primary sm" onClick=${() => chooseJoin(cloud, inv)}>যোগ দিন</button>
+    </div>`)}
+  </div>`;
+}
+
+function ShareSection({ cloud, state }) {
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+  const lib = state.library || {};
+  const members = lib.members || [];
+  const add = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setBusy(true);
+    try {
+      await cloud.addMember(email);
+      toast(`${email.trim()} যোগ হয়েছে — উনি Google দিয়ে লগইন করলেই এই লাইব্রেরি পাবেন`, { type: 'ok', ms: 6000 });
+      setEmail('');
+    } catch (err) {
+      toast(err.message, { type: 'err' });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return html`<div class="share stack">
+    <b><${Icon} name="heart" size=${16} /> লাইব্রেরি শেয়ার</b>
+    <p class="muted" style="margin:0">যাদের Gmail এখানে যোগ করবেন, তারা নিজের ফোনে <b>Google দিয়ে লগইন</b> করলেই এই লাইব্রেরি দেখতে ও বদলাতে পারবেন — একসাথে, দুই ফোনে।</p>
+    ${members.length > 0 && html`<div class="members">${members.map((m) => html`<div class="member" key=${m}>
+      <${Icon} name="user" size=${16} /><span class="grow">${m}</span>
+      <button class="icon-btn" aria-label=${`${m} বাদ দিন`} onClick=${async () => {
+        const ok = await confirmDialog({ title: 'বাদ দেবেন?', body: `${m} আর এই লাইব্রেরি দেখতে বা বদলাতে পারবেন না (ওনার ফোনে যা আছে তা থাকবে)।`, ok: 'বাদ দিন', danger: true });
+        if (!ok) return;
+        try { await cloud.removeMember(m); toast('বাদ দেওয়া হলো'); } catch (err) { toast(err.message, { type: 'err' }); }
+      }}><${Icon} name="close" /></button>
+    </div>`)}</div>`}
+    ${state.shareError && html`<${Notice} kind="warn" icon="alert">শেয়ার এখন কাজ করছে না: ${state.shareError}<//>`}
+    <form class="row" onSubmit=${add}>
+      <input class="input grow" type="email" inputmode="email" autocomplete="off" placeholder="যেমন: name@gmail.com" value=${email} onInput=${(e) => setEmail(e.target.value)} aria-label="যাকে যোগ করবেন তার Gmail" />
+      <button class="btn soft" type="submit" disabled=${busy || !email.trim()}><${Icon} name=${busy ? 'refresh' : 'plus'} className=${busy ? 'spin' : ''} /> যোগ</button>
+    </form>
+  </div>`;
+}
+
 function CloudSection({ state }) {
   const cloud = ctx.cloud;
   const cfg = readConfig();
@@ -107,25 +214,47 @@ function CloudSection({ state }) {
   let body;
   if (!s.configured || s.phase === 'off') {
     body = html`<div class="stack">
-      <${Notice} kind="info" icon="storage">এখন সব তথ্য <b>শুধু এই ফোনে</b> আছে (ইন্টারনেট ছাড়াই চলে)। দুই ফোনে একই অ্যাকাউন্টে একসাথে ব্যবহার করতে আর তথ্য চিরদিন নিরাপদ রাখতে ক্লাউড সিঙ্ক চালু করুন।<//>
+      <${Notice} kind="info" icon="storage">এখন সব তথ্য <b>শুধু এই ফোনে</b> আছে (ইন্টারনেট ছাড়াই চলে)। Google দিয়ে লগইন করে দুই ফোনে একসাথে ব্যবহার করতে আর তথ্য ক্লাউডে নিরাপদ রাখতে একবার ক্লাউড সেটআপ লাগবে (প্রায় ৫ মিনিট, ফ্রি)।<//>
       <div class="btn-row">
-        <button class="btn primary" onClick=${openConfigSheet}><${Icon} name="cloud" /> ক্লাউড সিঙ্ক সেটআপ</button>
+        <button class="btn primary" onClick=${openConfigSheet}><${Icon} name="cloud" /> ক্লাউড সেটআপ</button>
         <a class="btn ghost" href=${GUIDE_URL} target="_blank" rel="noopener"><${Icon} name="info" /> গাইড</a>
       </div>
     </div>`;
-  } else if (s.phase === 'loading') {
-    body = html`<p class="muted"><${Icon} name="refresh" className="spin" size=${16} /> ক্লাউডের সাথে সংযোগ হচ্ছে…</p>`;
+  } else if (s.phase === 'loading' || s.phase === 'resolving') {
+    body = html`<p class="muted"><${Icon} name="refresh" className="spin" size=${16} /> ${s.phase === 'loading' ? 'ক্লাউডের সাথে সংযোগ হচ্ছে…' : 'আপনার লাইব্রেরি খোঁজা হচ্ছে…'}</p>`;
   } else if (s.phase === 'signed-out' || s.phase === 'busy') {
-    body = html`<${LoginForm} cloud=${cloud} state=${s} />`;
+    body = html`<${SignInPanel} cloud=${cloud} state=${s} />`;
+  } else if (s.phase === 'invite') {
+    body = html`<div class="stack">
+      <p style="margin:0"><b>${s.user?.email}</b> দিয়ে লগইন হয়েছে। আপনাকে এই লাইব্রেরিতে যোগ করা হয়েছে:</p>
+      <${InviteList} cloud=${cloud} invites=${s.invites || []} />
+      ${s.error && html`<${Notice} kind="err" icon="alert">${s.error}<//>`}
+      <div class="btn-row">
+        <button class="btn ghost" onClick=${() => cloud.useOwnLibrary().catch((e) => toast(authErrorText(e), { type: 'err' }))}>না, আমার নিজের আলাদা লাইব্রেরি</button>
+        <button class="btn ghost" onClick=${() => cloud.signOut()}>সাইন আউট</button>
+      </div>
+    </div>`;
   } else if (s.phase === 'needs-switch') {
     body = html`<div class="stack">
-      <${Notice} kind="warn" icon="alert">এই ফোনের লাইব্রেরি অন্য একটি অ্যাকাউন্টের সাথে যুক্ত ছিল। <b>${s.user?.email}</b> অ্যাকাউন্টে যেতে হলে এই ফোনের তথ্য সরিয়ে নতুন অ্যাকাউন্টের তথ্য আনা হবে (আগে স্বয়ংক্রিয় ব্যাকআপ রাখা হবে)।<//>
+      <${Notice} kind="warn" icon="alert">এই ফোনের লাইব্রেরি অন্য একটি অ্যাকাউন্টের সাথে যুক্ত, যেটা <b>${s.user?.email}</b> দেখতে পারে না। কী করবেন?<//>
+      <button class="btn primary" onClick=${async () => {
+        const ok = await confirmDialog({ title: 'বইগুলো নতুন অ্যাকাউন্টে নেবেন?', body: `এই ফোনের সব বই ${s.user?.email}-এর লাইব্রেরিতে মিশিয়ে দেওয়া হবে। আগের অ্যাকাউন্টের ক্লাউড কপি যেমন ছিল তেমনই থাকবে।`, ok: 'হ্যাঁ, নিয়ে যান' });
+        if (ok) await cloud.confirmSwitch({ keep: true });
+      }}>এই ফোনের বই এই অ্যাকাউন্টে নিয়ে যান</button>
       <div class="btn-row">
         <button class="btn ghost" onClick=${() => cloud.signOut()}>সাইন আউট</button>
         <button class="btn danger" onClick=${async () => {
-          const ok = await confirmDialog({ title: 'নিশ্চিত?', body: 'চাইলে আগে “ব্যাকআপ ফাইল নামান” দিয়ে একটা কপি রেখে দিন।', ok: 'হ্যাঁ, বদলান', danger: true });
+          const ok = await confirmDialog({ title: 'এই ফোন খালি করে শুরু করবেন?', body: 'এই ফোনের তথ্য সরিয়ে নতুন অ্যাকাউন্টের তথ্য আনা হবে (আগে স্বয়ংক্রিয় ব্যাকআপ রাখা হবে)। চাইলে আগে “ব্যাকআপ ফাইল নামান” দিয়ে একটা কপি রেখে দিন।', ok: 'হ্যাঁ, খালি করুন', danger: true });
           if (ok) await cloud.confirmSwitch();
-        }}>অ্যাকাউন্ট বদলান</button>
+        }}>খালি করে শুরু</button>
+      </div>
+    </div>`;
+  } else if (s.phase === 'removed') {
+    body = html`<div class="stack">
+      <${Notice} kind="warn" icon="alert">এই লাইব্রেরিতে <b>${s.user?.email}</b>-এর প্রবেশাধিকার আর নেই (মালিক সরিয়ে দিয়েছেন)। এই ফোনে সব বই যেমন ছিল তেমনই আছে।<//>
+      <div class="btn-row">
+        <button class="btn primary" onClick=${() => cloud.useOwnLibrary().then(() => toast('এখন থেকে এটা আপনার নিজের লাইব্রেরি', { type: 'ok' }), (e) => toast(authErrorText(e), { type: 'err' }))}>নিজের লাইব্রেরি হিসেবে রাখুন</button>
+        <button class="btn ghost" onClick=${() => cloud.signOut()}>সাইন আউট</button>
       </div>
     </div>`;
   } else if (s.phase === 'error') {
@@ -134,30 +263,41 @@ function CloudSection({ state }) {
       ${cfg?.source === 'device' && html`<button class="btn ghost" onClick=${() => { clearConfig(); location.reload(); }}>সেটআপ মুছুন</button>`}</div></div>`;
   } else {
     const st = sync.state;
+    const lib = s.library || {};
+    const google = s.user?.provider === 'google.com';
     body = html`<div class="stack">
-      <div class="row"><span class="ic" style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--leaf-soft);color:var(--leaf)"><${Icon} name="user" /></span>
-        <div class="grow"><b>${s.user?.email}</b><div class="faint">এই অ্যাকাউন্টে লগইন করা</div></div></div>
+      <div class="row"><span class="ic" style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--leaf-soft);color:var(--leaf)">${google ? html`<${GoogleG} />` : html`<${Icon} name="user" />`}</span>
+        <div class="grow"><b>${s.user?.name || s.user?.email}</b><div class="faint">${s.user?.name ? `${s.user.email} · ` : ''}${google ? 'Google' : 'ইমেইল'} অ্যাকাউন্টে লগইন করা</div></div></div>
+      <div class="lib-line">${lib.own
+        ? html`<${Icon} name="folder" size=${16} /> <span>আপনার নিজের লাইব্রেরি${lib.members?.length ? html` · <b>${bn(lib.members.length)}</b> জনের সাথে শেয়ার করা` : ''}</span>`
+        : html`<${Icon} name="heart" size=${16} /> <span><b>${lib.ownerName || lib.ownerEmail || 'অন্যজনের'}</b>-এর লাইব্রেরি — আপনাকে যোগ করা হয়েছে</span>`}</div>
       <${Notice} kind=${st === 'synced' ? 'ok' : st === 'error' ? 'err' : st === 'offline' ? 'warn' : 'info'} icon=${st === 'synced' ? 'cloud' : st === 'offline' ? 'cloudOff' : st === 'error' ? 'alert' : 'refresh'}>
         ${st === 'synced' && html`<b>সব তথ্য ক্লাউডে নিরাপদ।</b> ${sync.lastSyncedAt ? `শেষ সিঙ্ক ${ago(sync.lastSyncedAt)}।` : ''}`}
         ${st === 'syncing' && html`সিঙ্ক হচ্ছে…${sync.pending ? ` (${bn(sync.pending)}টি বাকি)` : ''}`}
-        ${st === 'starting' && 'সিঙ্ক শুরু হচ্ছে…'}
+        ${(st === 'starting' || !st) && 'সিঙ্ক শুরু হচ্ছে…'}
         ${st === 'offline' && html`<b>ইন্টারনেট নেই।</b> ${sync.pending ? `${bn(sync.pending)}টি পরিবর্তন এই ফোনে জমা আছে — ইন্টারনেট এলেই নিজে থেকে ক্লাউডে যাবে।` : 'সব পরিবর্তন আগেই ক্লাউডে পৌঁছেছে।'}`}
-        ${st === 'error' && html`<b>সিঙ্কে সমস্যা:</b> ${sync.error}${/permission/i.test(sync.error || '') ? ' — Firestore rules ঠিকমতো বসানো হয়েছে কি না দেখুন (গাইড দেখুন)।' : ''}`}
+        ${st === 'error' && html`<b>সিঙ্কে সমস্যা:</b> ${sync.error}${/permission/i.test(sync.error || '') ? ' — Firestore rules হালনাগাদ করা হয়েছে কি না দেখুন (গাইড দেখুন)।' : ''}`}
       <//>
       <div class="btn-row">
         <button class="btn soft" onClick=${() => cloud.syncNow().then(() => toast('সিঙ্ক করা হলো', { type: 'ok' })).catch((e) => toast(e.message, { type: 'err' }))}><${Icon} name="refresh" /> এখনই সিঙ্ক</button>
-        <button class="btn soft" onClick=${openLinkDevice}><${Icon} name="qr" /> অন্য ফোন যুক্ত করুন</button>
+        <button class="btn soft" onClick=${openLinkDevice}><${Icon} name="qr" /> অন্য ফোনে খুলুন</button>
       </div>
+      ${lib.own && html`<${ShareSection} cloud=${cloud} state=${s} />`}
+      ${lib.own && s.invites?.length > 0 && html`<div class="stack"><b>আপনাকে যেসব লাইব্রেরিতে যোগ করা হয়েছে</b><${InviteList} cloud=${cloud} invites=${s.invites} /></div>`}
       <div class="btn-row">
         <button class="btn ghost" onClick=${async () => {
           const ok = await confirmDialog({ title: 'সাইন আউট করবেন?', body: 'এই ফোনের তথ্য থাকবে; আবার লগইন করলে সিঙ্ক চলবে।', ok: 'সাইন আউট' });
           if (ok) await cloud.signOut();
         }}><${Icon} name="logout" /> সাইন আউট</button>
         <button class="btn ghost" onClick=${() => cloud.fullResync().then(() => toast('পুরো লাইব্রেরি আবার মিলিয়ে নেওয়া হচ্ছে'))}>পুরো সিঙ্ক</button>
+        ${lib.own && s.user?.verified && html`<button class="btn ghost" onClick=${() => cloud.checkInvites().then(
+          (list) => { if (!list.length) toast('আপনার Gmail কোনো লাইব্রেরিতে যোগ করা নেই'); },
+          (e) => toast(authErrorText(e), { type: 'err' }),
+        )}>শেয়ার করা লাইব্রেরি খুঁজুন</button>`}
       </div>
     </div>`;
   }
-  return html`<section class="set-group" id="cloud"><h3><${Icon} name="cloud" /> ক্লাউড সিঙ্ক (দুই ফোনে একসাথে)</h3><div class="card pad">${body}</div></section>`;
+  return html`<section class="set-group" id="cloud"><h3><${Icon} name="cloud" /> অ্যাকাউন্ট ও ক্লাউড (দুই ফোনে একসাথে)</h3><div class="card pad">${body}</div></section>`;
 }
 
 // ---------------------------------------------------------------- gemini
@@ -456,7 +596,7 @@ export function SetupPage({ query }) {
     <div class="card pad" style="margin-top:16px">
       ${err ? html`<${Notice} kind="err" icon="alert">লিংকটি ঠিক নেই: ${err}<//>` : html`<div class="stack center">
         <${Lily} size=${100} />
-        <p>এই ফোনে <b>মাজেদার লাইব্রেরি</b>-র ক্লাউড সিঙ্ক চালু হবে (প্রজেক্ট: ${cfg.projectId})। তারপর একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করবেন।</p>
+        <p>এই ফোনে <b>মাজেদার লাইব্রেরি</b>-র ক্লাউড সিঙ্ক চালু হবে (প্রজেক্ট: ${cfg.projectId})। তারপর Google দিয়ে লগইন করবেন।</p>
         <button class="btn primary" onClick=${() => { saveConfig(cfg); navigate('/settings', { replace: true }); location.reload(); }}><${Icon} name="check" /> চালু করুন</button>
       </div>`}
     </div>

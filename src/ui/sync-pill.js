@@ -8,11 +8,13 @@ export function SyncPill({ state }) {
   let text = 'এই ডিভাইসে';
   if (!s.configured || s.phase === 'off') {
     // local mode
-  } else if (s.phase === 'loading' || s.phase === 'busy') {
+  } else if (s.phase === 'loading' || s.phase === 'busy' || s.phase === 'resolving') {
     cls = 'busy'; icon = 'refresh'; text = 'সংযোগ হচ্ছে…';
   } else if (s.phase === 'signed-out') {
     cls = 'off'; icon = 'user'; text = 'লগইন করুন';
-  } else if (s.phase === 'needs-switch' || s.phase === 'error') {
+  } else if (s.phase === 'invite') {
+    cls = 'off'; icon = 'user'; text = 'লাইব্রেরি বাছুন';
+  } else if (s.phase === 'needs-switch' || s.phase === 'removed' || s.phase === 'error') {
     cls = 'err'; icon = 'alert'; text = 'সমস্যা';
   } else if (s.phase === 'signed-in') {
     const sync = s.sync || {};

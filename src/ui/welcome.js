@@ -25,7 +25,7 @@ const SLIDES = [
   {
     art: 'cloud',
     title: 'তথ্য কখনো হারাবে না',
-    body: () => html`<p>সব তথ্য ফোনে থাকে, আর ক্লাউড সিঙ্ক চালু থাকলে একই অ্যাকাউন্টে দুই ফোনে একসাথে দেখা ও বদলানো যায়। কিছু মুছলেও আগে ট্র্যাশে যায় — ফেরত আনা যায়।</p>`,
+    body: () => html`<p>সব তথ্য ফোনে থাকে, আর Google দিয়ে লগইন করলে ক্লাউডেও থাকে — দুই ফোনে একসাথে একই লাইব্রেরি দেখা ও বদলানো যায়। কিছু মুছলেও আগে ট্র্যাশে যায় — ফেরত আনা যায়।</p>`,
   },
 ];
 
@@ -48,7 +48,7 @@ function Welcome({ lib, close }) {
     </div>
     <div class="btn-row">
       ${last
-        ? html`<button class="btn ghost" onClick=${() => { done(); navigate('/settings'); }}><${Icon} name="cloud" /> ক্লাউড সেটআপ</button>
+        ? html`<button class="btn ghost" onClick=${() => { done(); navigate('/settings'); }}><${Icon} name="cloud" /> লগইন / সিঙ্ক</button>
                <button class="btn primary" onClick=${done}>শুরু করি 🌸</button>`
         : html`<button class="btn ghost" onClick=${done}>বাদ দিন</button>
                <button class="btn primary" onClick=${() => setI(i + 1)}>পরের</button>`}

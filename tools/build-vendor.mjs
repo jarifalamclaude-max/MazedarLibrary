@@ -45,14 +45,15 @@ await build({
     contents: `
       export { initializeApp, getApps, deleteApp } from 'firebase/app';
       export {
-        initializeAuth, indexedDBLocalPersistence, browserLocalPersistence,
+        initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver,
         signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut,
         onAuthStateChanged, sendPasswordResetEmail, connectAuthEmulator,
+        GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential,
       } from 'firebase/auth';
       export {
         initializeFirestore, memoryLocalCache, collection, doc, query, where,
-        onSnapshot, runTransaction, serverTimestamp, Timestamp, getDocs,
-        connectFirestoreEmulator, terminate,
+        onSnapshot, runTransaction, serverTimestamp, Timestamp, getDocs, getDoc, setDoc, updateDoc,
+        arrayUnion, arrayRemove, connectFirestoreEmulator, terminate,
       } from 'firebase/firestore';
     `,
     resolveDir: root,

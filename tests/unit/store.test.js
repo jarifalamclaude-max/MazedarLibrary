@@ -156,3 +156,26 @@ test('wipe clears the library (after a snapshot) and seeding works again', async
   assert.equal(s.records.size, 350);
   s.close();
 });
+
+test('enqueueAll queues every real edit (books and covers), never untouched seed data', async () => {
+  const s = await fresh();
+  await s.seedIfNeeded(buildSeedRecords(), SEED_VERSION);
+  assert.equal(s.localChangeCount(), 0);
+  await s.put('records', { id: 'b_h001', favorite: true });
+  await s.put('records', { id: 'b_new', kind: 'book', title: 'সাতকাহন', authorId: 'a_x' });
+  await s.setCover('b_new', 'data:image/jpeg;base64,AAAA');
+  assert.equal(s.localChangeCount(), 2);
+  // Pretend all of it reached the old library: the outbox is empty again.
+  for (const coll of ['records', 'covers']) {
+    const ids = await s.outboxList(coll, 1000);
+    await s.applyRemote(coll, (await s.getManyRaw(coll, ids)).map((r) => ({ ...r, _srv: 1 })));
+  }
+  assert.equal(await s.pendingCount(), 0);
+  let announced = 0;
+  s.onLocalWrite(() => { announced += 1; });
+  assert.equal(await s.enqueueAll(), 3);
+  assert.equal(announced, 1);
+  assert.deepEqual((await s.outboxList('records', 1000)).sort(), ['b_h001', 'b_new']);
+  assert.deepEqual(await s.outboxList('covers', 1000), ['b_new']);
+  s.close();
+});

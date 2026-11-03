@@ -338,6 +338,27 @@ img { max-width: 100%; }
 .btn.sm svg { width: 16px; height: 16px; }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn-row > .btn { flex: 1 1 140px; }
+.btn.google { background: #fff; color: #1f1f1f; border: 1.5px solid #dadce0; width: 100%; padding: 13px 18px; font-family: inherit; box-shadow: var(--shadow-sm); }
+.btn.google:hover { background: #f8f9fa; }
+.btn.google .g-logo { width: 20px; height: 20px; }
+
+.more-login { border-top: 1px solid var(--line); padding-top: 10px; }
+.more-login > summary { cursor: pointer; color: var(--ink-2); font-size: 14.5px; font-weight: 600; padding: 4px 0; list-style-position: inside; }
+.more-login[open] > summary { margin-bottom: 10px; }
+.lib-line { display: flex; align-items: center; gap: 8px; font-size: 14.5px; color: var(--ink-2); padding: 8px 12px; border-radius: 14px; background: var(--surface-2); }
+.lib-line svg { flex: none; color: var(--rose); }
+.invite { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px solid var(--line-2); border-radius: 18px; background: var(--surface-2); }
+.invite .ic { flex: none; display: grid; place-items: center; }
+.invite .grow { min-width: 0; overflow-wrap: anywhere; }
+.share { border-top: 1px solid var(--line); padding-top: 12px; }
+.share > b { display: flex; align-items: center; gap: 6px; }
+.share > b svg { color: var(--rose); }
+.members { display: grid; gap: 6px; }
+.member { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 14px; background: var(--surface-2); font-size: 14.5px; }
+.member .grow { min-width: 0; overflow-wrap: anywhere; }
+.member > svg { flex: none; color: var(--ink-3, var(--ink-2)); }
+.share form.row { gap: 8px; }
+.share form .input { min-width: 0; }
 
 .fab {
   position: fixed; right: max(16px, calc(50vw - 364px)); bottom: calc(var(--nav-h) + var(--safe-b) + 16px); z-index: 40;

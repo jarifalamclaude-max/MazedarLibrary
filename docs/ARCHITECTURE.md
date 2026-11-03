@@ -100,8 +100,43 @@ Timestamp.fromMillis(since - overlapMs))))`, strip `_srv`, `clock.observe(maxSta
 `_srv` seen. Snapshots with `metadata.hasPendingWrites` are skipped. Status `synced`
 = listener has a server (non-cache) snapshot and outbox is empty.
 
-Security rules (`firebase/firestore.rules`): a user can read/write only
-`libraries/{their uid}/**`.
+(`uid` here is the *library* id: the owner's account id. A member's engine runs
+on the owner's id.)
+
+Security rules (`firebase/firestore.rules`): the library card
+`libraries/{libId}` = `{ owner, ownerEmail, ownerName, members: [email…≤10], createdAt }`
+can be created and updated only by the owner (`request.auth.uid == libId`). Books,
+folders and covers under it can be read and written by the owner and by any account
+whose **Google-verified** email (`email_verified == true`, lowercased) is in `members`.
+Members can also list the cards that name them (`where('members','array-contains',email)`).
+Nothing is ever deleted. `tests/emulator/sharing.test.js` checks all of this against
+the real rules engine.
+
+## Accounts and libraries (`src/lib/cloud.js`)
+
+- Config, in order: `config.js` → this device (pasted, localStorage) → Firebase
+  Hosting's `/__/firebase/init.json`. The last is fetched only on `*.web.app`,
+  `*.firebaseapp.com`, or when `config.js` sets `hosting: true`, and is remembered for
+  offline starts. On the project's own Hosting address, `authDomain` becomes that
+  origin, so Google sign-in needs no third-party storage.
+- Google sign-in: a popup in browser tabs and installed Android apps. An installed app
+  on the same origin as `authDomain` uses a redirect. An iPhone home-screen app on
+  another origin cannot finish Google sign-in (iOS), so that mode is reported as
+  `unavailable` and the UI points to the `web.app` address or to email/password.
+  `popupRedirectResolver` is not given to `initializeAuth`, so a signed-in phone
+  never loads Google's helper frame at start. It is preloaded only while signed out.
+- Device binding meta: `boundLibrary` (library id), `boundUser` (account that bound it;
+  legacy installs have only `boundUid`). Phases:
+  `off | loading | signed-out | busy | resolving | invite | signed-in | needs-switch | removed | error`.
+  - Same account as last time: carry on, offline too.
+  - Another account: allowed if it may use the bound library; otherwise `needs-switch`
+    (take this device's books along, or wipe after a snapshot).
+  - Fresh device: list the cards that name this email. None means the account's own
+    library. Otherwise `invite` (join one, or use the account's own library).
+  - Joining or switching merges this device's real edits into the new library
+    (`store.enqueueAll()`), or replaces them (wipe, then reseed).
+  - A member who is removed gets `removed`. The books stay on the phone and can become
+    the account's own library.
 
 ## Text contract (`src/lib/bangla.js`) — pure functions
 

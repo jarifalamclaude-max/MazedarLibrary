@@ -5,8 +5,8 @@
 // - OCR engine files and language data are cached the first time they are used
 //   (only the engine variant the phone needs is downloaded) and survive updates.
 // - config.js is served from cache and refreshed in the background (new config: next start).
-// - Cross-origin requests (Firebase, Gemini) are never intercepted.
-const VERSION = 'd16b8a6d2a4f';
+// - Cross-origin requests (Firebase, Gemini) and Firebase Hosting's /__/ pages are never intercepted.
+const VERSION = '9f957b49fed0';
 const PRECACHE = [
   "assets/fonts/fonts.css",
   "assets/fonts/galada-bengali-400-normal.woff2",
@@ -136,7 +136,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   const path = scopedPath(url);
   if (path === null) return;
+  // Firebase Hosting's own pages (Google sign-in handler, project config): always the network.
+  if (path.startsWith('__/')) return;
   if (request.mode === 'navigate') {
+    // A file opened in its own tab (the promo video, a PDF) is not the app.
+    if (path && path !== 'index.html' && /\.[a-z0-9]+$/i.test(path)) return;
     event.respondWith(fromShell('index.html').then((r) => r || fetch(request)));
     return;
   }

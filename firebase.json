@@ -1,10 +1,41 @@
 {
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "tests/**",
+      "tools/**",
+      "firebase/**",
+      "docs/source/**",
+      "docs/screenshots/**",
+      "package.json",
+      "package-lock.json",
+      "**/*.md"
+    ],
+    "headers": [
+      {
+        "source": "/@(sw.js|config.js|index.html|manifest.webmanifest)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "/",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "**/*.webmanifest",
+        "headers": [{ "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" }]
+      }
+    ]
+  },
   "firestore": {
     "rules": "firebase/firestore.rules"
   },
   "emulators": {
     "auth": { "host": "127.0.0.1", "port": 9099 },
     "firestore": { "host": "127.0.0.1", "port": 8080 },
+    "hosting": { "host": "127.0.0.1", "port": 5005 },
     "ui": { "enabled": false },
     "singleProjectMode": true
   }

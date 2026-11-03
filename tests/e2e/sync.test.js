@@ -24,6 +24,7 @@ after(async () => { await env?.close(); });
 async function device(name) {
   const d = await phone(env.browser);
   await d.context.addInitScript((cfg) => localStorage.setItem('mazedar:firebaseConfig', JSON.stringify(cfg)), CONFIG);
+  await d.context.route('https://apis.google.com/**', (r) => r.abort()); // Google's sign-in helper (unreachable here)
   d.name = name;
   return d;
 }
@@ -34,6 +35,7 @@ async function waitSynced(page) {
 
 async function signIn(page, base, { create = false } = {}) {
   await openApp(page, base, '#/settings');
+  await page.click('summary:has-text("ইমেইল-পাসওয়ার্ড")', { timeout: 20000 });
   await page.waitForSelector('input[type=email]', { timeout: 20000 });
   await page.fill('input[type=email]', EMAIL);
   await page.fill('input[autocomplete=current-password]', PASSWORD);
@@ -124,7 +126,7 @@ test('two phones on one account stay in sync, including offline edits on both', 
   // A 400 on documents:commit is a transaction that lost a race with the other
   // phone (both pushed the same book at once); it is retried, as the converged
   // state above shows, so the browser's log line for it is expected.
-  const expected = /net::|ERR_INTERNET_DISCONNECTED|WebChannelConnection|Could not reach Cloud Firestore|400 POST \S+documents:commit/;
+  const expected = /net::|ERR_INTERNET_DISCONNECTED|ERR_FAILED|WebChannelConnection|Could not reach Cloud Firestore|400 POST \S+documents:commit|apis\.google\.com/;
   assert.deepEqual([...A.errors, ...B.errors].filter((e) => !expected.test(e)), []);
   await A.context.close();
   await B.context.close();

@@ -8,7 +8,7 @@
 //
 // Implements the LocalStore interface from docs/ARCHITECTURE.md.
 
-import { createClock, randomId, parseStamp } from './clock.js';
+import { createClock, randomId, parseStamp, SEED_STAMP } from './clock.js';
 import { applyChanges, mergeRecords, recordsEqual, sanitize, maxStamp, isDataField, stampOf, canonical } from './merge.js';
 import { planApplyRemote } from './replica.js';
 
@@ -411,6 +411,41 @@ export async function openStore({ dbName = DB_NAME } = {}) {
   }
 
   // ---- account binding ------------------------------------------------------------
+  /**
+   * Queue every record and cover that carries a real edit (anything newer than
+   * the seed) for upload. Used when this device joins another cloud library, so
+   * books added here are merged into it instead of staying behind. Returns the
+   * number of documents queued.
+   */
+  function enqueueAll() {
+    return serial(async () => {
+      const t = db.transaction([...COLLECTIONS, 'outbox'], 'readwrite');
+      const ob = t.objectStore('outbox');
+      let n = 0;
+      for (const coll of COLLECTIONS) {
+        for (const r of await req(t.objectStore(coll).getAll())) {
+          if (!r || typeof r.id !== 'string' || !(maxStamp(r) > SEED_STAMP)) continue;
+          ob.put({ key: `${coll}|${r.id}`, coll, id: r.id, seq: ++outboxSeq });
+          n++;
+        }
+      }
+      await done(t);
+      if (n) {
+        for (const cb of localWriteListeners) {
+          try { cb(); } catch (e) { console.error(e); }
+        }
+      }
+      return n;
+    });
+  }
+
+  /** How many books/folders on this device were added or edited (not just seed data). */
+  function localChangeCount() {
+    let n = 0;
+    for (const r of records.values()) if (maxStamp(r) > SEED_STAMP) n++;
+    return n;
+  }
+
   /** Delete everything on this device (used when switching to another account). */
   async function wipe() {
     await snapshot('অ্যাকাউন্ট বদলের আগে');
@@ -463,6 +498,8 @@ export async function openStore({ dbName = DB_NAME } = {}) {
     autoSnapshotIfDue,
     exportAll,
     importAll,
+    enqueueAll,
+    localChangeCount,
     wipe,
     close() {
       try { channel?.close(); } catch { /* ignore */ }
